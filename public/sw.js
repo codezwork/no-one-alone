@@ -1,5 +1,5 @@
 /* Neighbours service worker: keeps the app working on a bad connection and shows push alerts. */
-const CACHE = 'neighbours-v3';
+const CACHE = 'neighbours-v4';
 const SHELL = ['/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {

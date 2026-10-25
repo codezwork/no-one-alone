@@ -1,18 +1,19 @@
 {
   "name": "neighbours",
   "version": "1.0.0",
-  "description": "Neighbours by No One Alone: find and give help within 3–4 km during a calamity, and trade essentials locally.",
+  "description": "Neighbours by No One Alone: find and give help within 3\u20134 km during a calamity, and trade essentials locally.",
   "private": true,
   "main": "server.js",
   "engines": {
     "node": "22.x"
   },
   "scripts": {
-    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "start": "node --env-file-if-exists=.env.local --disable-warning=ExperimentalWarning server.js",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
-    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js"
+    "seed": "node --env-file-if-exists=.env.local --disable-warning=ExperimentalWarning scripts/seed.js"
   },
   "dependencies": {
+    "@libsql/client": "0.14.0",
     "leaflet": "1.9.4",
     "web-push": "3.6.7"
   }

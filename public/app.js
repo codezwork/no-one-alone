@@ -1,5 +1,5 @@
 /* Neighbours: the phone app. Plain JS, no build step.
-   Talks to the JSON API, keeps a live event stream open for alerts, and follows the phone's
+   Talks to the JSON API, keeps a live event stream open for alerts (or polls, on Vercel), and follows the phone's
    GPS so "nearby" stays accurate as people move. */
 (function () {
   'use strict';
@@ -1053,25 +1053,45 @@
   }
 
   // ------------------------------------------------------------------ live updates and push
-  let stream = null;
+  // Locally the server keeps a live stream open. On Vercel (meta.live === 'poll') the app asks
+  // for anything newer every few seconds while it's on screen, and web push covers the rest.
+  let stream = null, pollTimer = null, lastId = 0;
+  const POLL_MS = 10000;
+  function arrived(n) {
+    lastId = Math.max(lastId, n.id || 0);
+    toast(n.title);
+    onRefresh({ refType: n.ref_type, refId: n.ref_id });
+  }
+  function poll() {
+    clearTimeout(pollTimer);
+    if (!S.token || document.visibilityState !== 'visible') return;
+    api('GET', '/api/notifications?since=' + lastId).then((d) => {
+      S.unread = d.unread; updateBadge();
+      d.items.slice().reverse().forEach(arrived);
+    }).catch(() => {}).finally(() => { if (S.token) pollTimer = setTimeout(poll, POLL_MS); });
+  }
   function startServices() {
     startWatch();
-    if (!stream && window.EventSource) {
+    const polling = S.meta && S.meta.live === 'poll';
+    if (!polling && !stream && window.EventSource) {
       stream = new EventSource('/api/stream?token=' + encodeURIComponent(S.token));
       stream.addEventListener('notification', (e) => {
-        const n = JSON.parse(e.data);
         S.unread += 1;
         updateBadge();
-        toast(n.title);
-        onRefresh({ refType: n.ref_type, refId: n.ref_id });
+        arrived(JSON.parse(e.data));
       });
       stream.addEventListener('refresh', (e) => onRefresh(JSON.parse(e.data)));
     }
-    api('GET', '/api/notifications').then((d) => { S.unread = d.unread; updateBadge(); }).catch(() => {});
+    api('GET', '/api/notifications').then((d) => {
+      S.unread = d.unread; updateBadge();
+      lastId = d.items.reduce((m, n) => Math.max(m, n.id), lastId);
+      if (polling) pollTimer = setTimeout(poll, POLL_MS);
+    }).catch(() => {});
   }
   function stopServices() {
     stopWatch();
     if (stream) { stream.close(); stream = null; }
+    clearTimeout(pollTimer); pollTimer = null; lastId = 0;
   }
   function updateBadge() {
     const tab = document.querySelector('.tab[href="#/alerts"]');
@@ -1408,7 +1428,11 @@
   // The first tap on "Need ... profession/category" chips should refresh the audience estimate.
   appEl.addEventListener('click', (ev) => { if (ev.target.closest('[data-act="draft-set"]')) setTimeout(updateAudience, 0); });
   window.addEventListener('online', () => { if (S.token) render({ keepScroll: true }); });
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.token && S.me) { api('GET', '/api/notifications').then((d) => { S.unread = d.unread; updateBadge(); }).catch(() => {}); } });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !S.token || !S.me) return;
+    if (S.meta && S.meta.live === 'poll') return poll();
+    api('GET', '/api/notifications').then((d) => { S.unread = d.unread; updateBadge(); }).catch(() => {});
+  });
 
   applyTheme(getTheme());
   render();

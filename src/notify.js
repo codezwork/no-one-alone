@@ -8,20 +8,23 @@ try { webpush = require('web-push'); } catch { webpush = null; }
 
 function createNotifier(db, log = () => {}) {
   const streams = new Map(); // userId -> Set<ServerResponse>
-  let pushReady = false;
-  let publicKey = null;
+  let keys = null; // loaded on first use, so a cold start doesn't wait on the database
+  const pending = new Set(); // pushes still in flight
 
-  if (webpush) {
-    publicKey = process.env.VAPID_PUBLIC_KEY || getSetting(db, 'vapid_public');
-    let privateKey = process.env.VAPID_PRIVATE_KEY || getSetting(db, 'vapid_private');
-    if (!publicKey || !privateKey) {
-      const keys = webpush.generateVAPIDKeys();
-      publicKey = keys.publicKey; privateKey = keys.privateKey;
-      setSetting(db, 'vapid_public', publicKey);
-      setSetting(db, 'vapid_private', privateKey);
-    }
-    webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:help@neighbours.invalid', publicKey, privateKey);
-    pushReady = true;
+  function ensurePush() {
+    if (!webpush) return Promise.resolve(null);
+    return keys || (keys = (async () => {
+      let publicKey = process.env.VAPID_PUBLIC_KEY || await getSetting(db, 'vapid_public');
+      let privateKey = process.env.VAPID_PRIVATE_KEY || await getSetting(db, 'vapid_private');
+      if (!publicKey || !privateKey) {
+        const fresh = webpush.generateVAPIDKeys();
+        publicKey = fresh.publicKey; privateKey = fresh.privateKey;
+        await setSetting(db, 'vapid_public', publicKey);
+        await setSetting(db, 'vapid_private', privateKey);
+      }
+      webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'mailto:help@neighbours.invalid', publicKey, privateKey);
+      return publicKey;
+    })().catch((err) => { keys = null; log('push keys failed', err); return null; }));
   }
 
   function attach(userId, res) {
@@ -47,14 +50,14 @@ function createNotifier(db, log = () => {}) {
   }, 25000).unref();
 
   async function push(userId, payload) {
-    if (!pushReady) return;
-    const subs = db.prepare('SELECT endpoint, keys FROM push_subs WHERE user_id = ?').all(userId);
+    if (!(await ensurePush())) return;
+    const subs = await db.q('SELECT endpoint, keys FROM push_subs WHERE user_id = ?').all(userId);
     for (const s of subs) {
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: JSON.parse(s.keys) }, JSON.stringify(payload), { TTL: 3600 });
       } catch (err) {
         if (err && (err.statusCode === 404 || err.statusCode === 410)) {
-          db.prepare('DELETE FROM push_subs WHERE endpoint = ?').run(s.endpoint);
+          await db.q('DELETE FROM push_subs WHERE endpoint = ?').run(s.endpoint);
         } else {
           log('push failed', err && err.statusCode, err && err.body);
         }
@@ -63,33 +66,37 @@ function createNotifier(db, log = () => {}) {
   }
 
   /** Store a notification, send it live, and push it to closed apps. */
-  function notify(userId, n) {
+  async function notify(userId, n) {
     const now = Date.now();
-    const info = db.prepare(
+    const info = await db.q(
       'INSERT INTO notifications(user_id, type, title, body, ref_type, ref_id, created_at) VALUES(?,?,?,?,?,?,?)'
     ).run(userId, n.type, n.title, n.body || null, n.refType || null, n.refId || null, now);
     const row = { id: Number(info.lastInsertRowid), user_id: userId, type: n.type, title: n.title, body: n.body || null,
       ref_type: n.refType || null, ref_id: n.refId || null, read: 0, created_at: now };
     emit(userId, 'notification', row);
     const url = n.refType === 'need' ? `/#/need/${n.refId}` : n.refType === 'listing' ? `/#/listing/${n.refId}` : '/#/alerts';
-    push(userId, { title: n.title, body: n.body || '', url, tag: `${n.refType || 'n'}-${n.refId || row.id}` }).catch(() => {});
+    const p = push(userId, { title: n.title, body: n.body || '', url, tag: `${n.refType || 'n'}-${n.refId || row.id}` }).catch(() => {});
+    pending.add(p); p.finally(() => pending.delete(p));
     return row;
   }
 
-  function subscribe(userId, sub) {
+  /** Serverless functions freeze once they reply, so the server waits for pushes first. */
+  async function settle() { while (pending.size) await Promise.all([...pending]); }
+
+  async function subscribe(userId, sub) {
     if (!sub || typeof sub.endpoint !== 'string' || !sub.keys || !sub.keys.p256dh || !sub.keys.auth) return false;
     if (!/^https:\/\//.test(sub.endpoint) || sub.endpoint.length > 1000) return false;
-    db.prepare(
+    await db.q(
       'INSERT INTO push_subs(endpoint, user_id, keys, created_at) VALUES(?,?,?,?) ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, keys = excluded.keys'
     ).run(sub.endpoint, userId, JSON.stringify({ p256dh: sub.keys.p256dh, auth: sub.keys.auth }), Date.now());
     return true;
   }
 
-  function unsubscribe(userId, endpoint) {
-    db.prepare('DELETE FROM push_subs WHERE endpoint = ? AND user_id = ?').run(String(endpoint || ''), userId);
+  async function unsubscribe(userId, endpoint) {
+    await db.q('DELETE FROM push_subs WHERE endpoint = ? AND user_id = ?').run(String(endpoint || ''), userId);
   }
 
-  return { attach, emit, notify, subscribe, unsubscribe, publicKey: () => (pushReady ? publicKey : null), streamCount: () => streams.size };
+  return { attach, emit, notify, settle, subscribe, unsubscribe, publicKey: ensurePush, streamCount: () => streams.size };
 }
 
 module.exports = { createNotifier };

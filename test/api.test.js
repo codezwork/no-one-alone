@@ -182,16 +182,30 @@ test('the radius starts at 4 km and can be set from 1 to 10 km in settings', asy
   assert.equal((await call('PATCH', '/api/me', token, { radiusKm: 4 })).body.user.radiusKm, 4);
 });
 
+test('polling with ?since returns only newer alerts', async () => {
+  const all = await notes('Ravi Doctor');
+  assert.ok(all.length > 0);
+  const newest = Math.max(...all.map((n) => n.id));
+  const none = await call('GET', '/api/notifications?since=' + newest, as('Ravi Doctor'));
+  assert.deepEqual(none.body.items, []);
+  await call('POST', '/api/needs', as('Asha'), { kind: 'professional', profession: 'doctor', title: 'Polling check', ...base });
+  const fresh = (await call('GET', '/api/notifications?since=' + newest, as('Ravi Doctor'))).body.items;
+  assert.equal(fresh.length, 1);
+  assert.equal(fresh[0].ref_type, 'need');
+  const meta = (await call('GET', '/api/meta')).body;
+  assert.equal(meta.live, 'stream');
+});
+
 test('requests expire after 24 hours and the poster is told', async () => {
   let clock = Date.now();
   const timed = createApp({ dbFile: ':memory:', log: () => {}, now: () => clock });
   const { svc } = timed;
-  const { user } = svc.signup({ name: 'Old Post', age: 40, gender: 'female', marital: 'married', profession: 'homemaker', ...base });
-  const me = timed.db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-  const { need } = svc.postNeed(me, { kind: 'general', category: 'deliver', ...base });
+  const { user } = await svc.signup({ name: 'Old Post', age: 40, gender: 'female', marital: 'married', profession: 'homemaker', ...base });
+  const me = await timed.db.q('SELECT * FROM users WHERE id = ?').get(user.id);
+  const { need } = await svc.postNeed(me, { kind: 'general', category: 'deliver', ...base });
   clock += 25 * 60 * 60 * 1000;
-  svc.expireOld();
-  assert.equal(svc.getNeed(me, need.id).need.status, 'expired');
-  assert.ok(svc.listNotifications(me).items.some((n) => n.type === 'need_expired'));
+  await svc.expireOld();
+  assert.equal((await svc.getNeed(me, need.id)).need.status, 'expired');
+  assert.ok((await svc.listNotifications(me)).items.some((n) => n.type === 'need_expired'));
   timed.server.close();
 });

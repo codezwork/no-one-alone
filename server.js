@@ -1,6 +1,6 @@
 'use strict';
 // Neighbours by No One Alone: local help and trade during calamities.
-// Plain Node (22.13+) HTTP server with SQLite storage; one dependency (web-push).
+// Plain Node (22.13+) HTTP server; data in Turso (libSQL), or a local SQLite file when TURSO_DATABASE_URL is unset.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -11,7 +11,6 @@ const { createService, AppError } = require('./src/service');
 
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
-const LEAFLET = path.join(ROOT, 'node_modules', 'leaflet', 'dist');
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -100,13 +99,15 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
   const svc = createService(db, notifier, { now });
   const limit = createLimiter();
 
-  const meta = () => ({
+  const meta = async () => ({
     professions: R.PROFESSIONS, generalHelp: R.GENERAL_HELP, tradeCategories: R.TRADE_CATEGORIES,
     rules: {
       minSignupAge: R.MIN_SIGNUP_AGE, helperMinAge: R.HELPER_MIN_AGE, generalHelpMinAge: R.GENERAL_HELP_MIN_AGE,
       sensitiveMinViewerAge: R.SENSITIVE_MIN_VIEWER_AGE, minRadiusKm: R.MIN_RADIUS_KM, maxRadiusKm: R.MAX_RADIUS_KM, defaultRadiusKm: R.DEFAULT_RADIUS_KM
     },
-    vapidPublicKey: notifier.publicKey()
+    vapidPublicKey: await notifier.publicKey(),
+    // Serverless instances can't hold a live stream open for each phone, so the app polls there instead.
+    live: process.env.VERCEL ? 'poll' : 'stream'
   });
 
   // [method, pattern, handler(ctx), options]; `:id` segments become ctx.params.id
@@ -116,7 +117,7 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
     ['POST', '/api/signup', (c) => { limit(c.ip, 'signup'); return svc.signup(c.body); }, { public: true }],
     ['POST', '/api/signin', (c) => { limit(c.ip, 'signup'); return svc.signin(c.body.code); }, { public: true }],
     ['GET', '/api/me', (c) => ({ user: svc.me(c.user) })],
-    ['PATCH', '/api/me', (c) => ({ user: svc.updateProfile(c.user, c.body) })],
+    ['PATCH', '/api/me', async (c) => ({ user: await svc.updateProfile(c.user, c.body) })],
     ['DELETE', '/api/me', (c) => svc.deleteAccount(c.user)],
     ['POST', '/api/me/location', (c) => { limit(c.user.id, 'location'); return svc.updateLocation(c.user, c.body); }],
 
@@ -144,13 +145,13 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
     ['POST', '/api/listings/:id/messages', (c) => { limit(c.user.id, 'message'); return svc.postListingMessage(c.user, c.params.id, c.body); }],
     ['POST', '/api/listings/:id/report', (c) => svc.report(c.user, 'listing', c.params.id, c.body.reason)],
 
-    ['GET', '/api/notifications', (c) => svc.listNotifications(c.user)],
+    ['GET', '/api/notifications', (c) => svc.listNotifications(c.user, c.url.searchParams.get('since'))],
     ['POST', '/api/notifications/read', (c) => svc.markRead(c.user, c.body)],
-    ['POST', '/api/push/subscribe', (c) => {
-      if (!notifier.subscribe(c.user.id, c.body.subscription)) throw new AppError(400, 'bad_subscription', 'This browser’s push subscription could not be saved.');
+    ['POST', '/api/push/subscribe', async (c) => {
+      if (!(await notifier.subscribe(c.user.id, c.body.subscription))) throw new AppError(400, 'bad_subscription', 'This browser’s push subscription could not be saved.');
       return { ok: true };
     }],
-    ['POST', '/api/push/unsubscribe', (c) => { notifier.unsubscribe(c.user.id, c.body.endpoint); return { ok: true }; }]
+    ['POST', '/api/push/unsubscribe', async (c) => { await notifier.unsubscribe(c.user.id, c.body.endpoint); return { ok: true }; }]
   ].map(([method, pattern, handler, opts = {}]) => {
     const keys = [];
     const re = new RegExp('^' + pattern.replace(/:(\w+)/g, (_, k) => { keys.push(k); return '([A-Za-z0-9_-]{1,40})'; }) + '$');
@@ -165,7 +166,7 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
 
   async function handleApi(req, res, url) {
     if (url.pathname === '/api/stream' && req.method === 'GET') {
-      const user = svc.auth(tokenFrom(req, url));
+      const user = await svc.auth(tokenFrom(req, url));
       if (!user) return send(res, 401, { error: { code: 'signed_out', message: 'Please sign in again.' } });
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no', ...SECURITY_HEADERS });
       res.write(`event: hello\ndata: {}\n\n`);
@@ -179,25 +180,23 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
     const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'local';
     let user = null;
     if (!route.opts.public) {
-      user = svc.auth(tokenFrom(req, url));
+      user = await svc.auth(tokenFrom(req, url));
       if (!user) return send(res, 401, { error: { code: 'signed_out', message: 'Please sign in again.' } });
       if (req.method !== 'GET') limit(user.id, 'write');
     }
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method) ? await readBody(req) : {};
-    const out = route.handler({ req, url, params, body: body && typeof body === 'object' ? body : {}, user, ip });
+    const out = await route.handler({ req, url, params, body: body && typeof body === 'object' ? body : {}, user, ip });
+    if (process.env.VERCEL) await notifier.settle();
     send(res, 200, out);
   }
 
   async function handler(req, res) {
-    const rawPath = req.headers['x-matched-path'] || req.originalUrl || req.url;
+    // Vercel may report the function's own path ("/api/[...path]"); skip that and use the real one.
+    const rawPath = [req.headers['x-matched-path'], req.originalUrl, req.url].find((p) => p && !p.includes('[')) || '/';
     const url = new URL(rawPath, 'http://localhost');
     try {
       if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, SECURITY_HEADERS); return res.end(); }
-      if (url.pathname.startsWith('/vendor/leaflet/')) {
-        const rel = path.normalize(url.pathname.slice('/vendor/leaflet/'.length)).replace(/^(\.\.[/\\])+/, '');
-        return serveFile(res, path.join(LEAFLET, rel), 'public, max-age=604800');
-      }
       const rel = path.normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, '');
       const file = path.join(PUBLIC, rel === '/' ? 'index.html' : rel);
       if (!file.startsWith(PUBLIC)) { res.writeHead(400, SECURITY_HEADERS); return res.end(); }
@@ -212,7 +211,7 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
 
   const server = http.createServer(handler);
   // Expire stale requests even when nobody is looking at them.
-  const timer = setInterval(() => { try { svc.expireOld(); } catch (e) { log('expire failed', e); } }, 60e3);
+  const timer = setInterval(() => { svc.expireOld().catch((e) => log('expire failed', e)); }, 60e3);
   timer.unref();
   server.on('close', () => { clearInterval(timer); try { db.close(); } catch { /* already closed */ } });
   return { server, handler, db, svc, notifier };
@@ -228,8 +227,8 @@ function getApp() {
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  const { server } = getApp();
-  server.listen(port, () => console.log(`Neighbours is running on http://localhost:${port}`));
+  const { server, db } = getApp();
+  server.listen(port, () => console.log(`Neighbours is running on http://localhost:${port}\nDatabase: ${db.remote ? 'Turso, ' : 'local file, '}${db.where}`));
 }
 
 const defaultExport = (req, res) => {

@@ -89,7 +89,7 @@ function serveFile(res, file, cache) {
   });
 }
 
-function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_DIR || path.join(ROOT, 'data'), 'neighbours.db'), log = console.log, now } = {}) {
+function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_DIR || (process.env.VERCEL ? '/tmp' : path.join(ROOT, 'data')), 'neighbours.db'), log = console.log, now } = {}) {
   const db = open(dbFile);
   const notifier = createNotifier(db, log);
   const svc = createService(db, notifier, { now });
@@ -106,7 +106,7 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
 
   // [method, pattern, handler(ctx), options]; `:id` segments become ctx.params.id
   const routes = [
-    ['GET', '/api/health', () => ({ ok: true })],
+    ['GET', '/api/health', () => ({ ok: true }), { public: true }],
     ['GET', '/api/meta', () => meta(), { public: true }],
     ['POST', '/api/signup', (c) => { limit(c.ip, 'signup'); return svc.signup(c.body); }, { public: true }],
     ['POST', '/api/signin', (c) => { limit(c.ip, 'signup'); return svc.signin(c.body.code); }, { public: true }],
@@ -171,7 +171,7 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
     if (!route) return send(res, 404, { error: { code: 'not_found', message: 'Not found.' } });
     const m = url.pathname.match(route.re);
     const params = Object.fromEntries(route.keys.map((k, i) => [k, m[i + 1]]));
-    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || 'local';
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'local';
     let user = null;
     if (!route.opts.public) {
       user = svc.auth(tokenFrom(req, url));
@@ -209,13 +209,27 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
   const timer = setInterval(() => { try { svc.expireOld(); } catch (e) { log('expire failed', e); } }, 60e3);
   timer.unref();
   server.on('close', () => { clearInterval(timer); try { db.close(); } catch { /* already closed */ } });
-  return { server, db, svc, notifier };
+  return { server, handler, db, svc, notifier };
+}
+
+let appInstance = null;
+function getApp() {
+  if (!appInstance) {
+    appInstance = createApp();
+  }
+  return appInstance;
 }
 
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  const { server } = createApp();
+  const { server } = getApp();
   server.listen(port, () => console.log(`Neighbours is running on http://localhost:${port}`));
 }
 
-module.exports = { createApp };
+const defaultExport = (req, res) => {
+  const { handler } = getApp();
+  return handler(req, res);
+};
+
+defaultExport.createApp = createApp;
+module.exports = defaultExport;

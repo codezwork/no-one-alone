@@ -1,0 +1,16 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getAppService } from '@/lib/service';
+import { requireUser, handleApiError } from '@/lib/auth';
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const user = await requireUser(req);
+    const { id } = await params;
+    const body = await req.json().catch(() => ({}));
+    const { svc } = getAppService();
+    const res = await svc.acceptRequest(user, id, body);
+    return NextResponse.json(res);
+  } catch (err) {
+    return handleApiError(err);
+  }
+}

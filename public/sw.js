@@ -1,6 +1,6 @@
 /* Neighbours service worker: keeps the app working on a bad connection and shows push alerts. */
-const CACHE = 'neighbours-v4';
-const SHELL = ['/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
+const CACHE = 'neighbours-v5';
+const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -26,8 +26,8 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
-  if (req.mode === 'navigate') { event.respondWith(networkFirst(req, '/index.html')); return; }
-  if (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/vendor/')) {
+  if (req.mode === 'navigate') { event.respondWith(networkFirst(req, '/')); return; }
+  if (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/_next/')) {
     event.respondWith(caches.match(req).then((hit) => hit || fetch(req).then((res) => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
       return res;

@@ -2,17 +2,20 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Neighbours by No One Alone — Hyperlocal Calamity Aid',
-  description: 'Find and give urgent help within 3–4 km during floods, cyclones and calamities, and trade essentials locally.',
+  title: 'No One Alone — Hyperlocal Calamity Aid',
+  description: 'Find and give urgent mutual help within 3–4 km during floods, cyclones and calamities, and trade essentials locally.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Neighbours',
+    title: 'No One Alone',
   },
   icons: {
-    icon: '/icons/icon-192.png',
-    apple: '/icons/icon-192.png',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/favicon.svg',
   },
 };
 
@@ -22,8 +25,22 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#090d16',
+  themeColor: '#000000',
 };
+
+const themeScript = `
+(function() {
+  try {
+    var saved = localStorage.getItem('neighbours_theme') || localStorage.getItem('no_one_alone_theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (saved === 'dark' || (!saved && prefersDark) || (saved === 'system' && prefersDark)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } catch (e) {}
+})();
+`;
 
 export default function RootLayout({
   children,
@@ -31,11 +48,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-[#090d16] text-slate-100 antialiased selection:bg-rose-500 selection:text-white">
-        <main className="mx-auto flex min-h-screen max-w-md flex-col pb-20 sm:max-w-xl md:max-w-2xl lg:max-w-4xl">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-screen text-[var(--ink)] antialiased selection:bg-neutral-800 selection:text-white">
+        {/* Anti-Gravity Ambient Mesh Orbs */}
+        <div className="ambient-mesh pointer-events-none" aria-hidden="true">
+          <div className="ambient-orb ambient-orb-1" />
+          <div className="ambient-orb ambient-orb-2" />
+          <div className="ambient-orb ambient-orb-3" />
+        </div>
+
+        {/* Floating App Canvas */}
+        <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
           {children}
-        </main>
+        </div>
       </body>
     </html>
   );

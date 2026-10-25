@@ -11,6 +11,7 @@ import { RecoveryCodeCard } from '@/components/auth/RecoveryCodeCard';
 import { NotificationDrawer } from '@/components/notifications/NotificationDrawer';
 import { NeedDetailModal } from '@/components/needs/NeedDetailModal';
 import { ListingDetailModal } from '@/components/trade/ListingDetailModal';
+import { Logo } from '@/components/ui/Logo';
 
 export default function Home() {
   const [token, setToken] = useState<string | null>(null);
@@ -31,7 +32,8 @@ export default function Home() {
 
   // Initialize Auth
   useEffect(() => {
-    const savedToken = localStorage.getItem('neighbours_token');
+    const savedToken =
+      localStorage.getItem('no_one_alone_token') || localStorage.getItem('neighbours_token');
     if (savedToken) {
       setToken(savedToken);
       fetch('/api/me', {
@@ -42,6 +44,7 @@ export default function Home() {
           if (d.user) {
             setUser(d.user);
           } else {
+            localStorage.removeItem('no_one_alone_token');
             localStorage.removeItem('neighbours_token');
             setToken(null);
             setShowAuth(true);
@@ -74,15 +77,16 @@ export default function Home() {
   }, [token]);
 
   const handleAuthSuccess = (newToken: string, newUser: any) => {
+    localStorage.setItem('no_one_alone_token', newToken);
     localStorage.setItem('neighbours_token', newToken);
     setToken(newToken);
     setUser(newUser);
     setShowAuth(false);
-    // If user just created an account (or we want to show recovery code)
     setNewCodeInfo({ code: newToken, name: newUser.name });
   };
 
   const handleSignOut = () => {
+    localStorage.removeItem('no_one_alone_token');
     localStorage.removeItem('neighbours_token');
     setToken(null);
     setUser(null);
@@ -91,24 +95,25 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-amber-600 shadow-xl shadow-rose-950/50">
-          <span className="font-black text-white text-2xl">N</span>
-          <span className="absolute -right-1 -top-1 flex h-3.5 w-3.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
-            <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-rose-500"></span>
-          </span>
+      <div className="flex min-h-screen flex-col items-center justify-center p-4">
+        <div className="glass-modal p-8 flex flex-col items-center justify-center text-center max-w-xs w-full shadow-2xl">
+          <Logo size={56} className="shadow-lg" />
+          <h3 className="mt-4 text-base font-bold text-[var(--ink)]">No One Alone</h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Locality Mutual Aid within 3–4 km
+          </p>
+          <div className="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink)]">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span>Connecting...</span>
+          </div>
         </div>
-        <p className="mt-4 text-xs font-semibold text-slate-400 tracking-wide">
-          Connecting to Neighbours...
-        </p>
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Top Header */}
+      {/* Floating Dynamic Island Top Header */}
       <Header
         user={user}
         unreadCount={unreadCount}
@@ -116,10 +121,10 @@ export default function Home() {
         onOpenLocationSettings={() => setActiveTab('you')}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1">
+      {/* Main Content Area: padded for floating island header & action dock */}
+      <main className="flex-1 pt-20 sm:pt-22 pb-28 px-3.5 sm:px-4">
         {newCodeInfo && (
-          <div className="p-4">
+          <div className="mb-4">
             <RecoveryCodeCard
               code={newCodeInfo.code}
               userName={newCodeInfo.name}
@@ -151,7 +156,7 @@ export default function Home() {
         ) : null}
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Floating Action Dock */}
       <BottomNav
         activeTab={activeTab}
         onChangeTab={setActiveTab}

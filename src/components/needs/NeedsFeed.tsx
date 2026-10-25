@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import {
   HeartHandshake,
   Plus,
-  Filter,
   ShieldCheck,
   CheckCircle2,
   RefreshCw,
   Sparkles,
-  AlertCircle,
+  Users,
+  MapPin,
 } from 'lucide-react';
 import { NeedCard } from './NeedCard';
 import { PostNeedModal } from './PostNeedModal';
@@ -65,51 +65,64 @@ export function NeedsFeed({ token, user, onRefreshStats }: NeedsFeedProps) {
   });
 
   return (
-    <div className="space-y-4 px-4 py-4 animate-fade-in">
-      {/* Top Action Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-rose-500/30 bg-gradient-to-br from-rose-950/60 via-slate-900 to-amber-950/40 p-5 shadow-xl">
-        <div className="relative z-10 flex items-start justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[11px] font-bold text-rose-300">
-              <Sparkles size={11} />
-              Calamity Mutual Aid
+    <div className="space-y-4 animate-fade-in">
+      {/* Top Calamity Aid Frosted Glass Hero Card */}
+      <div className="glass-card p-5 sm:p-6 flex flex-col justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <span className="frosted-badge frosted-badge-neutral">
+              <Sparkles size={11} className="shrink-0" />
+              <span>Hyperlocal 3–4 km Mutual Aid</span>
             </span>
-            <h2 className="mt-2 text-lg font-black tracking-tight text-white sm:text-xl">
-              Find & Give Help Locally
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--ink)]">
+              No One Alone
             </h2>
-            <p className="mt-1 text-xs text-slate-300 max-w-xs leading-relaxed">
-              When disaster strikes, your immediate neighbours are your first responders.
+            <p className="text-xs sm:text-[13px] text-[var(--ink-secondary)] max-w-sm leading-relaxed">
+              When calamities occur, your nearest community members are your first line of response and care.
             </p>
           </div>
+
+          {/* Minimalist Black/White Pill Button: Post a Need */}
           <button
             onClick={() => setShowPostModal(true)}
-            className="flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-rose-600 to-amber-600 px-4 py-3 text-xs font-bold text-white shadow-lg shadow-rose-950/60 hover:opacity-90 active:scale-95 transition-all shrink-0"
+            className="btn-pill btn-pill-primary shrink-0 shadow-lg"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Post a Need</span>
           </button>
         </div>
 
-        {/* Stats Pill */}
-        {data.stats && (
-          <div className="mt-4 flex items-center gap-3 border-t border-slate-800/80 pt-3 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1 text-emerald-400 font-semibold">
-              <CheckCircle2 size={13} />
-              <span>{data.stats.metToday || 0} resolved today</span>
-            </span>
-            <span>·</span>
-            <span>{data.stats.helpersNearby || 0} helpers in range</span>
-          </div>
-        )}
+        {/* Community Live Stats Pill */}
+        <div className="flex items-center gap-3 border-t border-[var(--line)] pt-3 text-xs text-[var(--muted)] flex-wrap">
+          <span className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
+            <CheckCircle2 size={13} className="text-emerald-500" />
+            <span>{data.stats?.metToday || 0} resolved today</span>
+          </span>
+          <span className="text-[var(--line-2)]">/</span>
+          <span className="flex items-center gap-1">
+            <Users size={12} className="text-[var(--muted)]" />
+            <span>{data.stats?.helpersNearby || 0} neighbours in range</span>
+          </span>
+          <span className="text-[var(--line-2)]">/</span>
+          <span className="flex items-center gap-1">
+            <MapPin size={12} className="text-[var(--muted)]" />
+            <span>{user?.radiusKm || 3.5} km active circle</span>
+          </span>
+        </div>
       </div>
 
-      {/* Requests I am helping with or posted */}
+      {/* Active Involvements Section */}
       {(helping.length > 0 || mine.length > 0) && (
         <div className="space-y-2.5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-            My Active Involvements
-          </h3>
-          <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+              Your Active Mutual Aid
+            </h3>
+            <span className="text-[11px] font-semibold text-[var(--ink)]">
+              {helping.length + mine.length} ongoing
+            </span>
+          </div>
+          <div className="space-y-2.5">
             {helping.map((n: any) => (
               <NeedCard key={n.id} need={n} onOpen={(item) => setSelectedNeedId(item.id)} />
             ))}
@@ -120,22 +133,22 @@ export function NeedsFeed({ token, user, onRefreshStats }: NeedsFeedProps) {
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 no-scrollbar">
+      {/* Frosted Pill Filter Tabs & Refresh Button */}
+      <div className="flex items-center justify-between gap-2 overflow-x-auto py-1 no-scrollbar">
         <div className="flex gap-1.5">
           {[
-            { id: 'all', label: `All (${allOpen.length})` },
+            { id: 'all', label: `All Requests (${allOpen.length})` },
             { id: 'medical', label: 'Medical' },
             { id: 'general', label: 'General Help' },
-            { id: 'alone', label: 'Alone' },
+            { id: 'alone', label: 'Living Alone' },
           ].map((f) => (
             <button
               key={f.id}
               onClick={() => setFilter(f.id as any)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+              className={`btn-pill text-xs py-1.5 px-3.5 min-h-[34px] ${
                 filter === f.id
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                  ? 'btn-pill-primary font-bold shadow-sm'
+                  : 'btn-pill-secondary font-medium'
               }`}
             >
               {f.label}
@@ -145,27 +158,40 @@ export function NeedsFeed({ token, user, onRefreshStats }: NeedsFeedProps) {
 
         <button
           onClick={fetchNeeds}
-          className="rounded-xl p-2 text-slate-400 hover:text-white transition-colors"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-bg-elevated)] transition-all active:scale-95 shadow-sm"
           title="Refresh Feed"
         >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {/* Open Needs List */}
-      <div className="space-y-2.5 pt-1">
+      {/* Locality Feed Requests */}
+      <div className="space-y-3 pt-0.5">
         {loading && allOpen.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-500 border-t-transparent mb-2" />
-            <p className="text-xs">Finding needs in your area...</p>
+          <div className="glass-card p-12 flex flex-col items-center justify-center text-center">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-black dark:border-white border-t-transparent mb-3" />
+            <p className="text-xs font-semibold text-[var(--muted)]">
+              Scanning 3–4 km neighbourhood for active needs...
+            </p>
           </div>
         ) : filteredOpen.length === 0 ? (
-          <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-8 text-center">
-            <ShieldCheck size={36} className="mx-auto text-emerald-400/80 mb-2" />
-            <h4 className="text-sm font-bold text-white">No Open Requests Right Now</h4>
-            <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-              All is calm in your {user?.radiusKm || 4} km radius. Post a need if you or someone nearby requires urgent assistance.
+          <div className="glass-card p-8 sm:p-10 text-center flex flex-col items-center justify-center border-dashed">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] text-[var(--ink)] mb-3">
+              <ShieldCheck size={26} />
+            </div>
+            <h4 className="text-base font-bold text-[var(--ink)]">
+              All Calm in Your Locality
+            </h4>
+            <p className="mt-1 text-xs text-[var(--muted)] max-w-xs mx-auto leading-relaxed">
+              No open crisis requests in your {user?.radiusKm || 3.5} km zone. Post a need if you or someone nearby needs urgent help.
             </p>
+            <button
+              onClick={() => setShowPostModal(true)}
+              className="mt-4 btn-pill btn-pill-primary text-xs"
+            >
+              <Plus size={14} />
+              <span>Ask for Community Help</span>
+            </button>
           </div>
         ) : (
           filteredOpen.map((need: any) => (
@@ -186,7 +212,7 @@ export function NeedsFeed({ token, user, onRefreshStats }: NeedsFeedProps) {
         onNeedCreated={fetchNeeds}
       />
 
-      {/* Need Detail & Chat Modal */}
+      {/* Need Detail & In-App Chat Modal */}
       <NeedDetailModal
         needId={selectedNeedId}
         onClose={() => setSelectedNeedId(null)}

@@ -90,7 +90,7 @@ export function createService(db: Database, notifier: Notifier, opts: { now?: ()
         fail(
           400,
           'too_young',
-          `You need to be ${R.MIN_SIGNUP_AGE} or older to use Neighbours. Ask an adult to post for you, or call 1098 (CHILDLINE).`
+          `You need to be ${R.MIN_SIGNUP_AGE} or older to use No One Alone. Ask an adult to post for you, or call 1098 (CHILDLINE).`
         );
       out.age = age;
     }

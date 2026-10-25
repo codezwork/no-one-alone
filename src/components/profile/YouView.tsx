@@ -13,8 +13,12 @@ import {
   Check,
   Copy,
   Navigation,
+  Sun,
+  Moon,
+  Laptop,
 } from 'lucide-react';
 import { MIN_RADIUS_KM, MAX_RADIUS_KM } from '@/lib/rules';
+import { useTheme } from '@/lib/theme';
 
 interface YouViewProps {
   user: any;
@@ -24,11 +28,13 @@ interface YouViewProps {
 }
 
 export function YouView({ user, token, onUserUpdated, onSignOut }: YouViewProps) {
-  const [radius, setRadius] = useState<number>(user?.radiusKm || 4);
+  const [radius, setRadius] = useState<number>(user?.radiusKm || 3.5);
   const [updatingRadius, setUpdatingRadius] = useState(false);
   const [updatingLoc, setUpdatingLoc] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  const { theme, setTheme } = useTheme();
 
   const handleRadiusChange = async (newRadius: number) => {
     setRadius(newRadius);
@@ -45,7 +51,7 @@ export function YouView({ user, token, onUserUpdated, onSignOut }: YouViewProps)
       if (res.ok) {
         const d = await res.json();
         onUserUpdated(d.user);
-        setStatusMsg(`Radius updated to ${newRadius} km.`);
+        setStatusMsg(`Locality radius updated to ${newRadius} km.`);
         setTimeout(() => setStatusMsg(null), 3000);
       }
     } catch {
@@ -79,7 +85,7 @@ export function YouView({ user, token, onUserUpdated, onSignOut }: YouViewProps)
         setStatusMsg(
           d.alerted > 0
             ? `Location updated! ${d.alerted} open request${d.alerted === 1 ? '' : 's'} now in range.`
-            : 'Location updated with phone GPS.'
+            : 'Location updated via GPS.'
         );
         setTimeout(() => setStatusMsg(null), 4000);
       }
@@ -114,132 +120,205 @@ export function YouView({ user, token, onUserUpdated, onSignOut }: YouViewProps)
   };
 
   return (
-    <div className="space-y-4 px-4 py-4 animate-fade-in pb-10">
-      {/* Profile Header Card */}
-      <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
+    <div className="space-y-4 animate-fade-in pb-10">
+      {/* Profile Header Frosted Glass Card */}
+      <div className="glass-card p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-4">
-          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 to-amber-600 text-white font-black text-2xl shadow-lg">
+          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black dark:bg-white text-white dark:text-black font-black text-2xl shadow-md">
             {user?.photo ? (
               <img src={user.photo} alt={user.name} className="h-full w-full object-cover" />
             ) : (
-              user?.name?.[0] || 'N'
+              user?.name?.[0] || 'U'
             )}
           </div>
 
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-white truncate">{user?.name}</h2>
-            <p className="text-xs font-semibold text-rose-400">
-              {user?.professionLabel || 'Neighbour'}
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-[var(--ink)] truncate">
+                {user?.name}
+              </h2>
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                <Check size={10} className="stroke-[3]" />
+              </span>
+            </div>
+
+            <p className="text-xs font-semibold text-[var(--muted)] mt-0.5">
+              {user?.professionLabel || 'Community Member'}
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5 capitalize">
+            <p className="text-[11px] text-[var(--muted)] mt-0.5 capitalize">
               {user?.age} yrs · {user?.gender} · {user?.marital}
             </p>
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-800/80 pt-3">
-          <div className="flex items-center gap-2 rounded-xl bg-slate-800/50 p-2.5">
-            <Award size={18} className="text-amber-400 shrink-0" />
+        {/* Stats Row in Frosted Glass */}
+        <div className="grid grid-cols-2 gap-2.5 border-t border-[var(--line)] pt-3.5">
+          <div className="flex items-center gap-2.5 rounded-2xl bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] p-3">
+            <Award size={18} className="text-[var(--ink)] shrink-0" />
             <div>
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Helped</p>
-              <p className="text-sm font-bold text-white">{user?.helped || 0} neighbours</p>
+              <p className="text-[10px] text-[var(--muted)] uppercase font-bold tracking-wider">
+                Helped
+              </p>
+              <p className="text-sm font-bold text-[var(--ink)]">
+                {user?.helped || 0} neighbours
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-slate-800/50 p-2.5">
+
+          <div className="flex items-center gap-2.5 rounded-2xl bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] p-3">
             <Heart size={18} className="text-rose-500 shrink-0 fill-rose-500/20" />
             <div>
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Thanks</p>
-              <p className="text-sm font-bold text-white">{user?.thanks || 0} received</p>
+              <p className="text-[10px] text-[var(--muted)] uppercase font-bold tracking-wider">
+                Thanks
+              </p>
+              <p className="text-sm font-bold text-[var(--ink)]">
+                {user?.thanks || 0} received
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       {statusMsg && (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-          <Check size={16} />
+        <div className="rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3.5 text-xs text-[var(--ink)] font-semibold flex items-center gap-2 shadow-sm">
+          <Check size={15} className="text-emerald-500 stroke-[3]" />
           <span>{statusMsg}</span>
         </div>
       )}
 
-      {/* Radius Setting */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-5 space-y-3">
+      {/* APPEARANCE / THEME SWITCH (CRITICAL USER REQUIREMENT) */}
+      <div className="glass-card p-5 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sliders size={18} className="text-rose-400" />
-            <h3 className="text-sm font-bold text-white">Neighbourhood Radius</h3>
+            <Sun size={17} className="text-[var(--ink)]" />
+            <h3 className="text-sm font-bold text-[var(--ink)]">Appearance & Theme</h3>
           </div>
-          <span className="rounded-full bg-rose-500/20 border border-rose-500/40 px-2.5 py-0.5 text-xs font-bold text-rose-300">
+          <span className="frosted-badge frosted-badge-neutral text-[10px] capitalize">
+            {theme === 'system' ? 'System Theme' : `${theme} Mode`}
+          </span>
+        </div>
+        <p className="text-xs text-[var(--muted)] leading-relaxed">
+          Switch between visionOS Frosted Light and Dark mode to match your comfort and environment.
+        </p>
+
+        {/* Sliding Frosted Segmented Pill Switch */}
+        <div className="flex rounded-full bg-[var(--glass-bg-subtle)] p-1 border border-[var(--glass-border-contrast)]">
+          <button
+            onClick={() => setTheme('light')}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold transition-all ${
+              theme === 'light'
+                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
+            }`}
+          >
+            <Sun size={14} />
+            <span>Light</span>
+          </button>
+
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold transition-all ${
+              theme === 'dark'
+                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
+            }`}
+          >
+            <Moon size={14} />
+            <span>Dark</span>
+          </button>
+
+          <button
+            onClick={() => setTheme('system')}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold transition-all ${
+              theme === 'system'
+                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
+            }`}
+          >
+            <Laptop size={14} />
+            <span>Auto</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Neighbourhood Radius Setting (3-4 km Zone) */}
+      <div className="glass-card p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sliders size={17} className="text-[var(--ink)]" />
+            <h3 className="text-sm font-bold text-[var(--ink)]">Hyperlocal Radius</h3>
+          </div>
+          <span className="frosted-badge frosted-badge-distance">
             {radius} km
           </span>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          How far requests and essential supplies reach you. In dense city areas during floods, 3–4 km is usually best.
+        <p className="text-xs text-[var(--muted)] leading-relaxed">
+          How far community requests and supplies reach you. During floods and calamities, 3–4 km is optimal for rapid mutual aid.
         </p>
         <input
           type="range"
           min={MIN_RADIUS_KM}
           max={MAX_RADIUS_KM}
+          step={0.5}
           value={radius}
           onChange={(e) => handleRadiusChange(Number(e.target.value))}
-          className="w-full accent-rose-500 cursor-pointer"
+          className="w-full accent-black dark:accent-white cursor-pointer"
         />
-        <div className="flex justify-between text-[10px] text-slate-500">
+        <div className="flex justify-between text-[10px] text-[var(--muted)]">
           <span>{MIN_RADIUS_KM} km</span>
-          <span>4 km (default)</span>
+          <span className="font-bold text-[var(--ink)]">3.5–4 km (calamity zone)</span>
           <span>{MAX_RADIUS_KM} km</span>
         </div>
       </div>
 
-      {/* Location Update */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-5 space-y-3">
+      {/* GPS Location Update Card */}
+      <div className="glass-card p-5 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Navigation size={18} className="text-emerald-400" />
-            <h3 className="text-sm font-bold text-white">GPS Location</h3>
+            <Navigation size={17} className="text-emerald-500" />
+            <h3 className="text-sm font-bold text-[var(--ink)]">GPS Coordinates</h3>
           </div>
           {user?.lat && (
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-[var(--muted)] font-mono">
               {Number(user.lat).toFixed(4)}, {Number(user.lng).toFixed(4)}
             </span>
           )}
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          Update your location if you moved to a shelter, relief camp, or another neighborhood.
+        <p className="text-xs text-[var(--muted)] leading-relaxed">
+          Update if you moved to a relief shelter, higher ground, or another locality block.
         </p>
         <button
           onClick={handleUpdateLocation}
           disabled={updatingLoc}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-800/80 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors disabled:opacity-50"
+          className="btn-pill btn-pill-secondary w-full text-xs font-semibold shadow-sm"
         >
           {updatingLoc ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--ink)] border-t-transparent" />
           ) : (
             <>
-              <MapPin size={14} className="text-rose-400" />
-              <span>Update to Current GPS</span>
+              <MapPin size={14} className="text-[var(--muted)]" />
+              <span>Update to Current GPS Location</span>
             </>
           )}
         </button>
       </div>
 
       {/* Recovery Code Card */}
-      <div className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-5 space-y-2.5">
-        <div className="flex items-center gap-2 text-amber-400">
-          <Key size={18} />
-          <h3 className="text-sm font-bold text-white">Your Recovery Code</h3>
+      <div className="glass-card p-5 space-y-2.5">
+        <div className="flex items-center gap-2 text-[var(--ink)]">
+          <Key size={17} />
+          <h3 className="text-sm font-bold text-[var(--ink)]">Your Safe Recovery Code</h3>
         </div>
-        <p className="text-xs text-amber-200/80 leading-relaxed">
-          Keep this code safe to sign in on other devices:
+        <p className="text-xs text-[var(--muted)] leading-relaxed">
+          Save this code to sign in to No One Alone on your other devices:
         </p>
-        <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-black/60 p-3 font-mono text-xs text-amber-300">
-          <span className="select-all break-all">{token}</span>
+        <div className="flex items-center justify-between rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3 font-mono text-xs text-[var(--ink)]">
+          <span className="select-all break-all font-bold">{token}</span>
           <button
             onClick={handleCopyCode}
-            className="ml-2 flex items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-1 text-xs font-bold text-amber-300 hover:bg-amber-500/30 shrink-0"
+            className="ml-2 btn-pill btn-pill-secondary py-1 px-2.5 min-h-[30px] text-xs font-bold shrink-0"
           >
-            {copiedCode ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+            {copiedCode ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
             <span>{copiedCode ? 'Copied' : 'Copy'}</span>
           </button>
         </div>
@@ -249,17 +328,17 @@ export function YouView({ user, token, onUserUpdated, onSignOut }: YouViewProps)
       <div className="pt-2 space-y-2">
         <button
           onClick={onSignOut}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-800 bg-slate-900/80 py-3 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+          className="btn-pill btn-pill-secondary w-full py-3 text-xs font-bold"
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           <span>Switch Account / Sign Out</span>
         </button>
 
         <button
           onClick={handleDeleteAccount}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl py-2 text-xs font-semibold text-rose-500/80 hover:text-rose-400 transition-colors"
+          className="flex w-full items-center justify-center gap-1.5 py-2 text-xs font-semibold text-rose-500 hover:text-rose-600 transition-colors"
         >
-          <Trash2 size={14} />
+          <Trash2 size={13} />
           <span>Delete Account</span>
         </button>
       </div>

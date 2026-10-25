@@ -8,11 +8,13 @@ import {
   CheckCircle2,
   Heart,
   Send,
-  AlertTriangle,
   Flag,
   User,
   ShieldAlert,
+  Sparkles,
   ArrowRight,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 
 interface NeedDetailModalProps {
@@ -38,6 +40,7 @@ export function NeedDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  const [showToast, setShowToast] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +83,8 @@ export function NeedDetailModal({
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error?.message || 'Failed to take request');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 5000);
       await fetchDetail();
       onActionComplete();
     } catch (err: any) {
@@ -213,168 +218,224 @@ export function NeedDetailModal({
 
   const need = data?.need;
   const messages = data?.messages || [];
-  const events = data?.events || [];
   const role = need?.role;
 
+  const posterName = need?.poster?.firstName || 'Neighbour';
+  const helperName = need?.helper?.firstName || currentUser?.name?.split(' ')[0] || 'Local Responder';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col rounded-3xl border border-slate-800 bg-[#0f172a] shadow-2xl my-auto overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 p-4 sm:px-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-xl animate-fade-in overflow-y-auto">
+      {/* Floating Top Accountability Toast */}
+      {showToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-60 glass-modal px-4 py-2.5 rounded-full flex items-center gap-2 text-xs font-bold text-[var(--ink)] shadow-2xl animate-fade-in border border-black/10 dark:border-white/20">
+          <Check size={14} className="stroke-[3] text-emerald-500" />
+          <span>Responsibility Taken: You are assisting {posterName} • Broadcasted across 3.5 km</span>
+        </div>
+      )}
+
+      {/* Apple Frosted Glass Modal Sheet */}
+      <div className="relative flex max-h-[88vh] w-full max-w-xl flex-col glass-modal my-auto overflow-hidden shadow-2xl">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-[var(--line)] p-4 sm:px-6">
           <div className="flex items-center gap-2">
             <span
-              className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+              className={`frosted-badge ${
                 need?.status === 'open'
-                  ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400'
+                  ? 'frosted-badge-neutral font-bold'
                   : need?.status === 'taken'
-                  ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
-                  : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                  ? 'frosted-badge-neutral font-bold border-neutral-400'
+                  : 'frosted-badge-emerald'
               }`}
             >
-              {need?.status === 'open' ? 'Open Request' : need?.status === 'taken' ? 'In Progress' : 'Resolved'}
+              {need?.status === 'open'
+                ? 'Open Need'
+                : need?.status === 'taken'
+                ? 'Helper En Route'
+                : 'Resolved'}
             </span>
+
             {need?.distanceKm != null && (
-              <span className="flex items-center gap-1 text-xs text-slate-400">
-                <MapPin size={12} className="text-rose-400" />
+              <span className="frosted-badge frosted-badge-distance">
+                <MapPin size={11} className="shrink-0 text-current" />
                 <span>{need.distanceKm} km away</span>
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-1.5">
             {role === 'viewer' && (
               <button
                 onClick={() => setShowReport(true)}
-                className="rounded-full p-2 text-slate-400 hover:text-rose-400 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] text-[var(--muted)] hover:text-rose-500 transition-colors"
                 title="Report Post"
               >
-                <Flag size={16} />
+                <Flag size={14} />
               </button>
             )}
             <button
               onClick={onClose}
-              className="rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-bg-elevated)] transition-colors"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {loading && !data ? (
             <div className="flex justify-center py-12">
-              <span className="h-6 w-6 animate-spin rounded-full border-2 border-rose-500 border-t-transparent" />
+              <span className="h-6 w-6 animate-spin rounded-full border-2 border-black dark:border-white border-t-transparent" />
             </div>
           ) : (
             <>
               {error && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-500 font-semibold">
                   {error}
                 </div>
               )}
 
               {/* Title & Situation */}
               <div>
-                <h2 className="text-xl font-bold text-white">{need?.title}</h2>
-                <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
-                  <span>Asked by {need?.poster?.firstName || 'Neighbour'}</span>
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--ink)]">
+                  {need?.title}
+                </h2>
+                <div className="mt-1 flex items-center gap-2 text-xs text-[var(--muted)] flex-wrap">
+                  <span className="font-semibold text-[var(--ink)]">
+                    Posted by {posterName}
+                  </span>
                   {need?.poster?.professionLabel && (
-                    <span>· {need.poster.professionLabel}</span>
+                    <span>• {need.poster.professionLabel}</span>
                   )}
                   {need?.alone && (
-                    <span className="rounded bg-orange-500/20 px-1.5 py-0.2 text-[10px] font-bold text-orange-300">
+                    <span className="frosted-badge frosted-badge-neutral font-bold text-[10px] py-0 px-2">
                       Living alone
                     </span>
                   )}
                 </div>
+
                 {need?.details && (
-                  <p className="mt-3 rounded-2xl bg-slate-900/60 p-4 text-xs text-slate-300 leading-relaxed border border-slate-800/80">
+                  <p className="mt-3 rounded-2xl bg-[var(--glass-bg-subtle)] p-3.5 text-xs sm:text-[13px] text-[var(--ink-secondary)] leading-relaxed border border-[var(--glass-border-contrast)]">
                     {need.details}
                   </p>
                 )}
               </div>
 
-              {/* Landmark & Address Card */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 space-y-2 text-xs">
+              {/* Landmark & Exact Door Address Card */}
+              <div className="rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3.5 space-y-2 text-xs">
                 {need?.landmark && (
-                  <div className="flex items-start gap-2 text-slate-300">
-                    <MapPin size={14} className="text-rose-400 shrink-0 mt-0.5" />
-                    <span><strong>Public hint:</strong> {need.landmark}</span>
+                  <div className="flex items-start gap-2 text-[var(--ink)]">
+                    <MapPin size={14} className="text-[var(--muted)] shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="font-bold">Public Landmark:</strong> {need.landmark}
+                    </span>
                   </div>
                 )}
+
                 {need?.address ? (
-                  <div className="flex items-start gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-2.5 text-emerald-200">
-                    <Lock size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                    <span><strong>Exact Door / Address:</strong> {need.address}</span>
+                  <div className="flex items-start gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-2.5 text-emerald-700 dark:text-emerald-300">
+                    <Lock size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="font-bold">Exact Door Address (Unlocked):</strong>{' '}
+                      {need.address}
+                    </span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 italic">
-                    <Lock size={12} />
-                    <span>Exact address is hidden until a helper is accepted.</span>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] italic">
+                    <Lock size={12} className="shrink-0" />
+                    <span>Exact door address unlocks only upon accepting responsibility.</span>
                   </div>
                 )}
               </div>
 
-              {/* Status Stepper Tracker */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
-                  Progress Tracker
-                </h4>
-                <div className="flex items-center justify-between text-xs">
+              {/* Locality Accountability State Banner */}
+              {need?.status === 'taken' && (
+                <div className="accountability-banner">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                    <Check size={13} className="stroke-[3]" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-xs text-[var(--ink)] leading-snug">
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      Responsibility Taken:
+                    </span>{' '}
+                    <span className="font-semibold">{helperName}</span> is assisting{' '}
+                    <span className="font-semibold">{posterName}</span>
+                    <span className="block text-[10.5px] text-[var(--muted)] mt-0.5">
+                      Broadcasted across 3.5 km neighbourhood radius
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Visual Progress Stepper Tracker */}
+              <div className="rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-white font-bold text-xs">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-black dark:bg-white text-white dark:text-black font-bold text-[11px] shadow-sm">
                       1
                     </span>
-                    <span className="text-[10px] text-slate-300">Posted</span>
+                    <span className="text-[10px] text-[var(--ink)]">Posted</span>
                   </div>
-                  <div className={`h-0.5 flex-1 mx-2 ${need?.takenAt ? 'bg-amber-500' : 'bg-slate-800'}`} />
+
+                  <div
+                    className={`h-0.5 flex-1 mx-2 transition-colors ${
+                      need?.takenAt ? 'bg-black dark:bg-white' : 'bg-[var(--line-2)]'
+                    }`}
+                  />
+
                   <div className="flex flex-col items-center gap-1">
                     <span
-                      className={`flex h-7 w-7 items-center justify-center rounded-full font-bold text-xs ${
+                      className={`flex h-6 w-6 items-center justify-center rounded-full font-bold text-[11px] shadow-sm ${
                         need?.takenAt
-                          ? 'bg-amber-500 text-slate-950'
-                          : 'bg-slate-800 text-slate-500'
+                          ? 'bg-black dark:bg-white text-white dark:text-black'
+                          : 'bg-[var(--line-2)] text-[var(--muted)]'
                       }`}
                     >
                       2
                     </span>
-                    <span className="text-[10px] text-slate-300">
-                      {need?.helper ? `${need.helper.firstName} Helping` : 'Taken'}
+                    <span className="text-[10px] text-[var(--ink)]">
+                      {need?.helper ? `${helperName} Helping` : 'Claimed'}
                     </span>
                   </div>
-                  <div className={`h-0.5 flex-1 mx-2 ${need?.resolvedAt ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+
+                  <div
+                    className={`h-0.5 flex-1 mx-2 transition-colors ${
+                      need?.resolvedAt ? 'bg-emerald-500' : 'bg-[var(--line-2)]'
+                    }`}
+                  />
+
                   <div className="flex flex-col items-center gap-1">
                     <span
-                      className={`flex h-7 w-7 items-center justify-center rounded-full font-bold text-xs ${
+                      className={`flex h-6 w-6 items-center justify-center rounded-full font-bold text-[11px] shadow-sm ${
                         need?.resolvedAt
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'bg-slate-800 text-slate-500'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-[var(--line-2)] text-[var(--muted)]'
                       }`}
                     >
                       3
                     </span>
-                    <span className="text-[10px] text-slate-300">Resolved</span>
+                    <span className="text-[10px] text-[var(--ink)]">Satisfied</span>
                   </div>
                 </div>
               </div>
 
-              {/* ACTION BUTTONS */}
+              {/* ACTION BUTTONS (Apple Frosted Pill Treatment) */}
               <div className="flex flex-col gap-2 pt-1">
-                {/* Viewer can take request */}
+                {/* Viewer can take request: Primary Action Button ("Take Responsibility / Help") */}
                 {need?.status === 'open' && need?.canTake && (
                   <button
                     onClick={handleTake}
                     disabled={actionLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 py-3 text-sm font-bold text-white shadow-lg shadow-rose-950/50 hover:opacity-90 disabled:opacity-50"
+                    className="btn-pill btn-pill-primary w-full py-3.5 text-sm font-bold shadow-lg"
                   >
-                    <Heart size={16} />
-                    <span>I Can Help with This Request</span>
+                    <Heart size={15} className="shrink-0" />
+                    <span>I Will Help / Claim Responsibility</span>
                   </button>
                 )}
 
-                {/* Refusal text if viewer cannot take */}
+                {/* Refusal note if viewer cannot take */}
                 {need?.status === 'open' && !need?.canTake && need?.refusal && role === 'viewer' && (
-                  <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 text-center text-xs text-slate-400">
+                  <div className="rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3 text-center text-xs text-[var(--muted)]">
                     {need.refusal}
                   </div>
                 )}
@@ -385,16 +446,17 @@ export function NeedDetailModal({
                     <button
                       onClick={handleRelease}
                       disabled={actionLoading}
-                      className="rounded-xl border border-slate-700 bg-slate-800 py-2.5 text-xs font-semibold text-slate-300 hover:bg-slate-700"
+                      className="btn-pill btn-pill-secondary text-xs"
                     >
                       Can't Make It (Release)
                     </button>
                     <button
                       onClick={handleResolve}
                       disabled={actionLoading}
-                      className="rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-500"
+                      className="btn-pill btn-pill-primary text-xs font-bold"
                     >
-                      Mark Resolved
+                      <CheckCircle2 size={15} />
+                      <span>Mark Satisfied</span>
                     </button>
                   </div>
                 )}
@@ -404,9 +466,10 @@ export function NeedDetailModal({
                   <button
                     onClick={handleResolve}
                     disabled={actionLoading}
-                    className="rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-500"
+                    className="btn-pill btn-pill-primary w-full py-3 text-sm font-bold shadow-md"
                   >
-                    Mark Resolved
+                    <CheckCircle2 size={16} />
+                    <span>Mark Satisfied / Resolved</span>
                   </button>
                 )}
 
@@ -414,10 +477,10 @@ export function NeedDetailModal({
                   <button
                     onClick={handleThank}
                     disabled={actionLoading}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white shadow-md hover:bg-rose-500"
+                    className="btn-pill btn-pill-primary w-full py-3 text-sm font-bold shadow-md flex items-center justify-center gap-1.5"
                   >
-                    <Heart size={16} className="fill-white" />
-                    <span>Thank Helper ❤️</span>
+                    <Heart size={15} className="fill-current text-rose-500" />
+                    <span>Thank Helper</span>
                   </button>
                 )}
 
@@ -425,26 +488,30 @@ export function NeedDetailModal({
                   <button
                     onClick={handleCancel}
                     disabled={actionLoading}
-                    className="text-center text-xs text-slate-500 hover:text-rose-400 py-1 transition-colors"
+                    className="text-center text-xs text-[var(--muted)] hover:text-rose-500 py-1 transition-colors"
                   >
                     Cancel request (no longer needed)
                   </button>
                 )}
               </div>
 
-              {/* IN-APP CHAT (Between Poster and Helper) */}
+              {/* IN-APP CHAT: Frosted Bubbles between Poster and Helper */}
               {(role === 'poster' || role === 'helper') && (
-                <div className="mt-4 border-t border-slate-800 pt-4">
-                  <h4 className="text-xs font-bold text-white mb-2 flex items-center justify-between">
-                    <span>Direct In-App Chat</span>
-                    <span className="text-[10px] text-slate-400 font-normal">Private between you both</span>
-                  </h4>
+                <div className="mt-3 border-t border-[var(--line)] pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-bold text-[var(--ink)]">
+                      Direct Mutual Aid Chat
+                    </h4>
+                    <span className="text-[10px] text-[var(--muted)]">
+                      Private between {posterName} & {helperName}
+                    </span>
+                  </div>
 
-                  {/* Messages list */}
-                  <div className="max-h-52 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/60 p-3 space-y-2 text-xs">
+                  {/* Messages Bubble List */}
+                  <div className="max-h-48 overflow-y-auto rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3 space-y-2 text-xs">
                     {messages.length === 0 ? (
-                      <div className="text-center py-6 text-slate-500 text-[11px]">
-                        No messages yet. Say hello or share landmark instructions.
+                      <div className="text-center py-6 text-[var(--muted)] text-[11px]">
+                        No messages yet. Share arrival updates or landmark directions.
                       </div>
                     ) : (
                       messages.map((m: any, i: number) => (
@@ -452,12 +519,14 @@ export function NeedDetailModal({
                           key={i}
                           className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`}
                         >
-                          <span className="text-[10px] text-slate-500 mb-0.5">{m.from}</span>
+                          <span className="text-[9.5px] text-[var(--muted)] mb-0.5 px-1">
+                            {m.from}
+                          </span>
                           <div
-                            className={`rounded-2xl px-3.5 py-2 max-w-[80%] leading-relaxed ${
+                            className={`rounded-2xl px-3.5 py-2 max-w-[82%] leading-relaxed ${
                               m.mine
-                                ? 'bg-rose-600 text-white rounded-br-none'
-                                : 'bg-slate-800 text-slate-200 rounded-bl-none'
+                                ? 'bg-black text-white dark:bg-white dark:text-black shadow-sm'
+                                : 'bg-[var(--glass-bg-elevated)] text-[var(--ink)] border border-[var(--glass-border-contrast)] shadow-sm'
                             }`}
                           >
                             {m.body}
@@ -468,21 +537,21 @@ export function NeedDetailModal({
                     <div ref={chatEndRef} />
                   </div>
 
-                  {/* Message Input */}
-                  <form onSubmit={handleSendMessage} className="mt-2 flex gap-2">
+                  {/* Chat Input Pill */}
+                  <form onSubmit={handleSendMessage} className="mt-2 flex gap-1.5">
                     <input
                       type="text"
                       value={msgText}
                       onChange={(e) => setMsgText(e.target.value)}
                       placeholder="Type a message..."
-                      className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none"
+                      className="flex-1 rounded-full border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-4 py-2 text-xs text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
                     />
                     <button
                       type="submit"
                       disabled={sendingMsg || !msgText.trim()}
-                      className="rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white disabled:opacity-50 hover:bg-rose-500 transition-colors"
+                      className="btn-pill btn-pill-primary px-3.5 py-2 min-h-[36px] text-xs"
                     >
-                      <Send size={14} />
+                      <Send size={13} />
                     </button>
                   </form>
                 </div>
@@ -493,30 +562,30 @@ export function NeedDetailModal({
 
         {/* Report Modal */}
         {showReport && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
-            <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <h3 className="text-sm font-bold text-white">Report this Request</h3>
-              <p className="mt-1 text-xs text-slate-400">
-                If 3 neighbours report a post, it is hidden from the feed automatically.
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md">
+            <div className="w-full max-w-sm rounded-3xl glass-modal p-5 space-y-3">
+              <h3 className="text-sm font-bold text-[var(--ink)]">Report this Request</h3>
+              <p className="text-xs text-[var(--muted)]">
+                If 3 neighbours report a post, it will be automatically hidden from the feed.
               </p>
               <textarea
                 rows={2}
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
                 placeholder="Reason (e.g. spam, invalid, unsafe)..."
-                className="mt-3 w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-xs text-white focus:border-rose-500 focus:outline-none"
+                className="w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3 text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
               />
-              <div className="mt-3 flex justify-end gap-2">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowReport(false)}
-                  className="rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                  className="btn-pill btn-pill-secondary text-xs py-1.5 px-3 min-h-[32px]"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleReport}
                   disabled={!reportReason.trim()}
-                  className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-500 disabled:opacity-50"
+                  className="btn-pill btn-pill-primary text-xs py-1.5 px-3 min-h-[32px]"
                 >
                   Submit Report
                 </button>

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import { MapPin, Navigation, HeartHandshake, Package, Layers } from 'lucide-react';
+import { MapPin, Navigation, AlertCircle, Package } from 'lucide-react';
 import { NeedDetailModal } from '../needs/NeedDetailModal';
 import { ListingDetailModal } from '../trade/ListingDetailModal';
 
@@ -20,7 +20,7 @@ export function MapView({ token, user }: MapViewProps) {
 
   const centerLat = user?.lat || 13.0012;
   const centerLng = user?.lng || 80.2565;
-  const radiusMeters = (user?.radiusKm || 4) * 1000;
+  const radiusMeters = (user?.radiusKm || 3.5) * 1000;
 
   // Load items from APIs
   const loadMapData = async () => {
@@ -72,58 +72,65 @@ export function MapView({ token, user }: MapViewProps) {
         attribution: '© OpenStreetMap contributors',
       }).addTo(map);
 
-      // User location circle
+      // User locality radius boundary circle
       L.circle([centerLat, centerLng], {
         radius: radiusMeters,
-        color: '#f43f5e',
-        fillColor: '#f43f5e',
-        fillOpacity: 0.08,
+        color: '#000000',
+        fillColor: '#000000',
+        fillOpacity: 0.05,
         weight: 1.5,
-        dashArray: '4, 4',
+        dashArray: '5, 5',
       }).addTo(map);
 
-      // User dot marker
+      // User location pulsing marker
       const userDotIcon = L.divIcon({
         className: 'user-marker',
         html: `<div class="relative flex h-5 w-5 items-center justify-center">
-                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
-                 <span class="relative inline-flex h-4 w-4 rounded-full border-2 border-white bg-rose-600 shadow-lg"></span>
+                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-neutral-400 opacity-75"></span>
+                 <span class="relative inline-flex h-4 w-4 rounded-full border-2 border-white bg-black shadow-md"></span>
                </div>`,
         iconSize: [20, 20],
         iconAnchor: [10, 10],
       });
       L.marker([centerLat, centerLng], { icon: userDotIcon })
         .addTo(map)
-        .bindPopup(`<div class="p-1 font-sans text-xs"><strong>Your Location</strong><br/>${user?.radiusKm || 4} km active area</div>`);
+        .bindPopup(`<div class="p-1 font-sans text-xs"><strong>Your Locality</strong><br/>${user?.radiusKm || 3.5} km active circle</div>`);
 
-      // Add Need Pins
+      // Add Need Pins (Clean vector alert marker instead of text emoji)
       if (activeFilter === 'all' || activeFilter === 'needs') {
         needs.forEach((n) => {
           if (!n.lat || !n.lng) return;
           const needIcon = L.divIcon({
             className: 'need-marker',
-            html: `<div class="flex h-7 w-7 items-center justify-center rounded-xl bg-rose-600 text-white shadow-lg border-2 border-white text-xs font-bold transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform">
-                     🆘
+            html: `<div class="flex h-8 w-8 items-center justify-center rounded-2xl bg-black text-white shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform">
+                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                       <circle cx="12" cy="12" r="10"/>
+                       <line x1="12" y1="8" x2="12" y2="12"/>
+                       <line x1="12" y1="16" x2="12.01" y2="16"/>
+                     </svg>
                    </div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
           });
           const m = L.marker([n.lat, n.lng], { icon: needIcon }).addTo(map);
           m.on('click', () => setSelectedNeedId(n.id));
         });
       }
 
-      // Add Trade Pins
+      // Add Trade Pins (Clean vector package marker instead of text emoji)
       if (activeFilter === 'all' || activeFilter === 'trade') {
         listings.forEach((l) => {
           if (!l.lat || !l.lng) return;
           const tradeIcon = L.divIcon({
             className: 'trade-marker',
-            html: `<div class="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg border-2 border-white text-xs font-bold transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform">
-                     📦
+            html: `<div class="flex h-8 w-8 items-center justify-center rounded-2xl bg-neutral-800 text-white shadow-lg border-2 border-white transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-transform">
+                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                       <path d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                       <path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>
+                     </svg>
                    </div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
           });
           const m = L.marker([l.lat, l.lng], { icon: tradeIcon }).addTo(map);
           m.on('click', () => setSelectedListingId(l.id));
@@ -151,59 +158,62 @@ export function MapView({ token, user }: MapViewProps) {
   };
 
   return (
-    <div className="relative h-[calc(100vh-140px)] w-full overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl animate-fade-in mx-2 my-2 sm:mx-4">
-      {/* Leaflet container */}
+    <div className="relative h-[calc(100vh-160px)] w-full overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-[var(--bg-canvas)] shadow-2xl animate-fade-in">
+      {/* Leaflet map container */}
       <div ref={mapContainerRef} className="h-full w-full z-0" />
 
       {/* Top Filter Floating Bar */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
-        <div className="flex gap-1.5 rounded-2xl border border-slate-800/80 bg-slate-900/90 p-1 backdrop-blur-md shadow-lg pointer-events-auto">
+        <div className="flex gap-1.5 glass-dock p-1 pointer-events-auto shadow-lg">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+            className={`btn-pill text-xs py-1.5 px-3 min-h-[32px] ${
               activeFilter === 'all'
-                ? 'bg-rose-600 text-white shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'btn-pill-primary font-bold'
+                : 'btn-pill-secondary'
             }`}
           >
             All Pins
           </button>
           <button
             onClick={() => setActiveFilter('needs')}
-            className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+            className={`btn-pill text-xs py-1.5 px-3 min-h-[32px] flex items-center gap-1.5 ${
               activeFilter === 'needs'
-                ? 'bg-rose-600 text-white shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'btn-pill-primary font-bold'
+                : 'btn-pill-secondary'
             }`}
           >
-            <span>🆘 Needs ({needs.length})</span>
+            <AlertCircle size={13} className="shrink-0" />
+            <span>Needs ({needs.length})</span>
           </button>
           <button
             onClick={() => setActiveFilter('trade')}
-            className={`flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+            className={`btn-pill text-xs py-1.5 px-3 min-h-[32px] flex items-center gap-1.5 ${
               activeFilter === 'trade'
-                ? 'bg-emerald-600 text-white shadow'
-                : 'text-slate-400 hover:text-white'
+                ? 'btn-pill-primary font-bold'
+                : 'btn-pill-secondary'
             }`}
           >
-            <span>📦 Supplies ({listings.length})</span>
+            <Package size={13} className="shrink-0" />
+            <span>Supplies ({listings.length})</span>
           </button>
         </div>
 
         {/* Recenter Button */}
         <button
           onClick={handleRecenter}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-800/80 bg-slate-900/90 text-rose-400 backdrop-blur-md shadow-lg hover:bg-slate-800 transition-all pointer-events-auto active:scale-95"
+          className="flex h-10 w-10 items-center justify-center rounded-full glass-island text-[var(--ink)] shadow-lg hover:bg-[var(--glass-bg-elevated)] transition-all pointer-events-auto active:scale-95"
           title="Recenter to my location"
         >
           <Navigation size={18} />
         </button>
       </div>
 
-      {/* Bottom Hint */}
+      {/* Bottom Hint Floating Badge */}
       <div className="absolute bottom-4 left-4 right-4 z-10 pointer-events-none text-center">
-        <span className="inline-block rounded-full bg-slate-900/90 border border-slate-800 px-3 py-1 text-[11px] font-medium text-slate-300 shadow-md backdrop-blur-md">
-          Showing {user?.radiusKm || 4} km neighbourhood radius · Tap pins to open details
+        <span className="inline-flex items-center gap-1 rounded-full glass-island px-3.5 py-1 text-[11px] font-semibold text-[var(--ink)] shadow-md">
+          <MapPin size={11} className="text-[var(--muted)]" />
+          <span>Locality Zone: {user?.radiusKm || 3.5} km radius active</span>
         </span>
       </div>
 

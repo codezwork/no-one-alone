@@ -1,7 +1,17 @@
 'use client';
 import React, { useState } from 'react';
-import { UserPlus, Key, ArrowRight, ArrowLeft, Camera, Shield, CheckCircle2 } from 'lucide-react';
+import {
+  UserPlus,
+  Key,
+  ArrowRight,
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  MapPin,
+  Sparkles,
+} from 'lucide-react';
 import { PROFESSIONS, GENDERS, MARITAL, MIN_SIGNUP_AGE } from '@/lib/rules';
+import { Logo } from '../ui/Logo';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -50,7 +60,6 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
     setError(null);
     setLoading(true);
     try {
-      // Get current location if permitted
       let loc: { lat?: number; lng?: number } = {};
       try {
         const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -58,7 +67,6 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
         });
         loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       } catch {
-        // fallback to default Chennai coords if denied in browser
         loc = { lat: 13.0012, lng: 80.2565 };
       }
 
@@ -112,40 +120,47 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-md rounded-3xl border border-slate-800 bg-[#0f172a] p-6 shadow-2xl my-8">
-        {/* Brand header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xl animate-fade-in overflow-y-auto">
+      {/* Floating Single Frosted Glass Onboarding Card */}
+      <div className="relative w-full max-w-md glass-modal p-6 sm:p-7 shadow-2xl my-8">
+        {/* Brand header with Two Hands Joining SVG Logo */}
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-amber-600 shadow-lg shadow-rose-950/50">
-            <Shield size={26} className="text-white" />
+          <div className="mx-auto flex justify-center mb-1">
+            <Logo size={46} />
           </div>
-          <h2 className="mt-3 text-xl font-bold tracking-tight text-white">
-            Welcome to Neighbours
+          <h2 className="mt-3 text-xl sm:text-2xl font-black tracking-tight text-[var(--ink)]">
+            No One Alone
           </h2>
-          <p className="mt-1 text-xs text-slate-400">
-            Hyperlocal mutual aid & essential support during calamities
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Hyperlocal community mutual-aid within 3–4 km
           </p>
+
+          {/* Locality Verification Badge with MapPin SVG */}
+          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] px-3 py-1 text-[11px] font-semibold text-[var(--ink)]">
+            <MapPin size={11} className="shrink-0 text-[var(--muted)]" />
+            <span>Locality Zone: 3.5 km Radius Active</span>
+          </div>
         </div>
 
-        {/* Tab switcher */}
-        <div className="mt-5 flex rounded-xl border border-slate-800 bg-slate-900/60 p-1">
+        {/* Minimalist Sliding Segmented Tab Pill */}
+        <div className="mt-5 flex rounded-full bg-[var(--glass-bg-subtle)] p-1 border border-[var(--glass-border-contrast)]">
           <button
             onClick={() => { setTab('signup'); setError(null); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold transition-all ${
               tab === 'signup'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
             }`}
           >
             <UserPlus size={14} />
-            <span>Join Neighbours</span>
+            <span>Join Locality</span>
           </button>
           <button
             onClick={() => { setTab('signin'); setError(null); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-bold transition-all ${
               tab === 'signin'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-black dark:bg-white text-white dark:text-black shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
             }`}
           >
             <Key size={14} />
@@ -154,7 +169,7 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
         </div>
 
         {error && (
-          <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-500 font-semibold">
             {error}
           </div>
         )}
@@ -164,48 +179,52 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
           <div className="mt-5">
             {/* Step indicator */}
             <div className="flex items-center justify-between mb-4 px-1">
-              <span className="text-xs font-medium text-slate-400">Step {step} of 3</span>
+              <span className="text-xs font-semibold text-[var(--muted)]">Step {step} of 3</span>
               <div className="flex gap-1.5">
                 {[1, 2, 3].map((s) => (
                   <span
                     key={s}
                     className={`h-1.5 w-6 rounded-full transition-all ${
-                      s === step ? 'bg-rose-500' : s < step ? 'bg-slate-600' : 'bg-slate-800'
+                      s === step
+                        ? 'bg-black dark:bg-white'
+                        : s < step
+                        ? 'bg-emerald-500'
+                        : 'bg-[var(--line-2)]'
                     }`}
                   />
                 ))}
               </div>
             </div>
 
-            {/* STEP 1: Name and optional photo */}
+            {/* STEP 1: Name & optional photo */}
             {step === 1 && (
               <div className="space-y-4">
                 <div className="flex flex-col items-center justify-center">
-                  <label className="group relative flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-slate-700 bg-slate-800/80 hover:border-rose-500 transition-colors">
+                  <label className="group relative flex h-20 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-[var(--line-2)] bg-[var(--glass-bg-subtle)] hover:border-black dark:hover:border-white transition-colors shadow-sm">
                     {photo ? (
                       <img src={photo} alt="Preview" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center text-slate-400 group-hover:text-rose-400">
+                      <div className="flex flex-col items-center text-[var(--muted)] group-hover:text-[var(--ink)]">
                         <Camera size={22} />
-                        <span className="text-[9px] mt-1">Photo</span>
+                        <span className="text-[9px] mt-1 font-semibold">Photo</span>
                       </div>
                     )}
                     <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                   </label>
-                  <span className="mt-1.5 text-[11px] text-slate-400">Photo is optional</span>
+                  <span className="mt-1.5 text-[11px] text-[var(--muted)]">Photo is optional</span>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Your Full Name</label>
+                  <label className="text-xs font-bold text-[var(--ink)]">Your Full Name</label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Priya Sharma"
-                    className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-rose-500 focus:outline-none"
+                    className="mt-1 w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-4 py-2.5 text-sm text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Neighbours only ever see your first name (e.g. Priya) for safety.
+                  <p className="mt-1 text-[11px] text-[var(--muted)]">
+                    Locality members only see your first name (e.g. Priya) for safety.
                   </p>
                 </div>
 
@@ -213,7 +232,7 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
                   type="button"
                   disabled={name.trim().length < 2}
                   onClick={() => setStep(2)}
-                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white shadow-lg shadow-rose-950/40 hover:bg-rose-500 disabled:opacity-50 transition-all"
+                  className="btn-pill btn-pill-primary w-full py-3 text-sm font-bold shadow-md"
                 >
                   <span>Continue</span>
                   <ArrowRight size={16} />
@@ -226,8 +245,8 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between">
-                    <label className="text-xs font-semibold text-slate-300">Age</label>
-                    <span className="text-xs font-bold text-rose-400">{age} years</span>
+                    <label className="text-xs font-bold text-[var(--ink)]">Age</label>
+                    <span className="text-xs font-bold text-[var(--ink)]">{age} years</span>
                   </div>
                   <input
                     type="range"
@@ -235,28 +254,27 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
                     max={90}
                     value={age}
                     onChange={(e) => setAge(Number(e.target.value))}
-                    className="mt-2 w-full accent-rose-500"
+                    className="mt-2 w-full accent-black dark:accent-white cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-500">
+                  <div className="flex justify-between text-[10px] text-[var(--muted)]">
                     <span>13 yrs</span>
-                    <span>18+ (can help)</span>
-                    <span>24+ (child/elder care)</span>
+                    <span>18+ (helper)</span>
                     <span>90 yrs</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Gender</label>
+                  <label className="text-xs font-bold text-[var(--ink)]">Gender</label>
                   <div className="mt-1.5 grid grid-cols-3 gap-2">
                     {GENDERS.map((g) => (
                       <button
                         key={g}
                         type="button"
                         onClick={() => setGender(g)}
-                        className={`rounded-xl border py-2 text-xs font-semibold capitalize transition-all ${
+                        className={`rounded-full border py-2 text-xs font-semibold capitalize transition-all ${
                           gender === g
-                            ? 'border-rose-500 bg-rose-500/20 text-white'
-                            : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'
+                            ? 'bg-black dark:bg-white text-white dark:text-black border-transparent shadow-sm'
+                            : 'border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] text-[var(--muted)] hover:text-[var(--ink)]'
                         }`}
                       >
                         {g}
@@ -266,104 +284,115 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">Marital Status</label>
+                  <label className="text-xs font-bold text-[var(--ink)]">Marital Status</label>
                   <div className="mt-1.5 grid grid-cols-2 gap-2">
                     {MARITAL.map((m) => (
                       <button
                         key={m}
                         type="button"
                         onClick={() => setMarital(m)}
-                        className={`rounded-xl border py-2 text-xs font-semibold capitalize transition-all ${
+                        className={`rounded-full border py-2 text-xs font-semibold capitalize transition-all ${
                           marital === m
-                            ? 'border-rose-500 bg-rose-500/20 text-white'
-                            : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'
+                            ? 'bg-black dark:bg-white text-white dark:text-black border-transparent shadow-sm'
+                            : 'border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] text-[var(--muted)] hover:text-[var(--ink)]'
                         }`}
                       >
                         {m}
                       </button>
                     ))}
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Used strictly to enforce safety filters (e.g. requests by young girls are protected).
+                  <p className="mt-1 text-[11px] text-[var(--muted)]">
+                    Used strictly to enforce safety filters (e.g. young girls protected from unverified visitors).
                   </p>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                    className="btn-pill btn-pill-secondary px-4 py-2.5 text-xs"
                   >
-                    <ArrowLeft size={16} />
+                    <ArrowLeft size={15} />
                     <span>Back</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white shadow-lg shadow-rose-950/40 hover:bg-rose-500"
+                    className="btn-pill btn-pill-primary flex-1 py-2.5 text-xs font-bold shadow-md"
                   >
-                    <span>Next: Profession</span>
-                    <ArrowRight size={16} />
+                    <span>Next: Skills & Role</span>
+                    <ArrowRight size={15} />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* STEP 3: Profession */}
+            {/* STEP 3: Skills & Role selection with Frosted Pill Tags */}
             {step === 3 && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300">What is your profession?</label>
-                  <p className="text-[11px] text-slate-400 mb-2">
-                    Emergency requests (e.g., Doctor, Electrician) alert matching neighbours first.
+                  <label className="text-xs font-bold text-[var(--ink)]">
+                    Select Your Role & Skill in the Locality
+                  </label>
+                  <p className="text-[11px] text-[var(--muted)] mb-2.5">
+                    During a crisis, requests are routed to neighbours with matching skills.
                   </p>
-                  <select
-                    value={profession}
-                    onChange={(e) => setProfession(e.target.value)}
-                    className="w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3.5 py-2.5 text-sm text-white focus:border-rose-500 focus:outline-none"
-                  >
-                    {PROFESSIONS.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
+
+                  <div className="flex flex-wrap gap-2">
+                    {PROFESSIONS.map((p) => {
+                      const isSelected = profession === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setProfession(p.id)}
+                          className={`btn-pill text-xs py-1.5 px-3 min-h-[34px] ${
+                            isSelected
+                              ? 'btn-pill-primary font-bold shadow-sm'
+                              : 'btn-pill-secondary font-medium'
+                          }`}
+                        >
+                          <span>{p.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {profession === 'other' && (
                   <div>
-                    <label className="text-xs font-semibold text-slate-300">Tell us what you do</label>
+                    <label className="text-xs font-bold text-[var(--ink)]">Tell us what you do</label>
                     <input
                       type="text"
                       value={professionOther}
                       onChange={(e) => setProfessionOther(e.target.value)}
-                      placeholder="e.g. Civil Engineer, Shopkeeper"
-                      className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3.5 py-2.5 text-sm text-white focus:border-rose-500 focus:outline-none"
+                      placeholder="e.g. Civil Engineer, Carpenter, Shopkeeper"
+                      className="mt-1 w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-4 py-2.5 text-xs text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
                     />
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                    className="btn-pill btn-pill-secondary px-4 py-2.5 text-xs"
                   >
-                    <ArrowLeft size={16} />
+                    <ArrowLeft size={15} />
                     <span>Back</span>
                   </button>
                   <button
                     type="button"
                     disabled={loading || (profession === 'other' && professionOther.trim().length < 2)}
                     onClick={handleSignUp}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 py-3 text-sm font-bold text-white shadow-lg shadow-rose-950/40 hover:opacity-90 disabled:opacity-50"
+                    className="btn-pill btn-pill-primary flex-1 py-2.5 text-xs font-bold shadow-md"
                   >
                     {loading ? (
-                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     ) : (
                       <>
                         <CheckCircle2 size={16} />
-                        <span>Create My Account</span>
+                        <span>Enter Locality</span>
                       </>
                     )}
                   </button>
@@ -377,13 +406,13 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
         {tab === 'signin' && (
           <div className="mt-5 space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300">Enter Your Recovery Code</label>
+              <label className="text-xs font-bold text-[var(--ink)]">Enter Your Recovery Code</label>
               <textarea
                 rows={2}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="Paste your 16-character code here..."
-                className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-900/90 p-3 font-mono text-xs text-amber-300 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
+                className="mt-1 w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3 font-mono text-xs text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none focus:ring-1 focus:ring-black dark:focus:ring-white"
               />
             </div>
 
@@ -391,10 +420,10 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
               type="button"
               disabled={loading || !code.trim()}
               onClick={() => handleSignIn()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 text-sm font-bold text-white shadow-lg shadow-rose-950/40 hover:bg-rose-500 disabled:opacity-50"
+              className="btn-pill btn-pill-primary w-full py-3 text-sm font-bold shadow-md"
             >
               {loading ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   <Key size={16} />
@@ -403,10 +432,10 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
               )}
             </button>
 
-            {/* Quick Demo Signins from Turso Seed */}
-            <div className="mt-6 border-t border-slate-800/80 pt-4">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                Or Sign In As Sample Neighbour (Turso Cloud):
+            {/* Quick Demo Signins from Sample Profiles */}
+            <div className="mt-5 border-t border-[var(--line)] pt-3">
+              <p className="text-[10.5px] font-bold text-[var(--muted)] uppercase tracking-wider">
+                Instant 1-Tap Demo Sign In:
               </p>
               <div className="mt-2 space-y-1.5">
                 {SAMPLE_CODES.map((s) => (
@@ -414,10 +443,12 @@ export function AuthModal({ isOpen, onSuccess }: AuthModalProps) {
                     key={s.code}
                     type="button"
                     onClick={() => handleSignIn(s.code)}
-                    className="flex w-full items-center justify-between rounded-xl border border-slate-800/60 bg-slate-900/40 px-3 py-2 text-left text-xs text-slate-300 hover:border-slate-700 hover:bg-slate-800 transition-colors"
+                    className="flex w-full items-center justify-between rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-3.5 py-2 text-left text-xs hover:bg-[var(--glass-bg-elevated)] transition-colors active:scale-98"
                   >
-                    <span className="font-medium text-white">{s.name}</span>
-                    <span className="text-[10px] text-rose-400">{s.role}</span>
+                    <span className="font-semibold text-[var(--ink)]">{s.name}</span>
+                    <span className="frosted-badge frosted-badge-distance text-[10px] py-0 px-2">
+                      {s.role}
+                    </span>
                   </button>
                 ))}
               </div>

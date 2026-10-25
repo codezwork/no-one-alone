@@ -78,27 +78,31 @@ export function PostListingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-lg rounded-3xl border border-slate-800 bg-[#0f172a] p-6 shadow-2xl my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xl animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-lg glass-modal p-6 sm:p-7 shadow-2xl my-8">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-bg-elevated)] transition-colors"
         >
-          <X size={20} />
+          <X size={16} />
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-emerald-500/20 p-2.5 text-emerald-400">
-            <PackagePlus size={26} />
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--emerald-soft)] text-[var(--emerald)] border border-[var(--emerald-border)] shadow-sm">
+            <PackagePlus size={24} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Offer an Essential Item</h2>
-            <p className="text-xs text-slate-400">Share or trade supplies locally with neighbours</p>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--ink)]">
+              Offer Essential Supplies
+            </h2>
+            <p className="text-xs text-[var(--muted)]">
+              Share or trade items with neighbours within 3–4 km
+            </p>
           </div>
         </div>
 
         {error && (
-          <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+          <div className="mt-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-500 font-semibold">
             {error}
           </div>
         )}
@@ -106,13 +110,13 @@ export function PostListingModal({
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           {/* Photo */}
           <div className="flex flex-col items-center">
-            <label className="group relative flex h-28 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-700 bg-slate-900/60 hover:border-emerald-500 transition-colors">
+            <label className="group relative flex h-28 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-[var(--line-2)] bg-[var(--glass-bg-subtle)] hover:border-[var(--emerald)] transition-colors">
               {photo ? (
                 <img src={photo} alt="Preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex flex-col items-center text-slate-400 group-hover:text-emerald-400">
+                <div className="flex flex-col items-center text-[var(--muted)] group-hover:text-[var(--emerald)]">
                   <Camera size={26} />
-                  <span className="text-xs mt-1.5 font-medium">Add Photo (Optional)</span>
+                  <span className="text-xs mt-1.5 font-semibold">Add Photo (Optional)</span>
                 </div>
               )}
               <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
@@ -121,107 +125,85 @@ export function PostListingModal({
 
           {/* Title */}
           <div>
-            <label className="text-xs font-semibold text-slate-300">What are you offering?</label>
+            <label className="text-xs font-bold text-[var(--ink)]">Item Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. 5L Mineral Water Can, Powerbank 20000mAh, Baby Diapers"
-              className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+              placeholder="e.g. 20L Filtered Drinking Water Can, 20,000mAh Power Bank"
+              className="mt-1 w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-4 py-2.5 text-xs sm:text-sm text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none focus:ring-2 focus:ring-[var(--emerald)]"
             />
           </div>
 
-          {/* Category & Condition */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold text-slate-300">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2.5 text-xs text-white focus:border-emerald-500 focus:outline-none"
-              >
-                {TRADE_CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-300">Condition</label>
-              <div className="mt-1.5 grid grid-cols-3 gap-1">
-                {['new', 'good', 'used'].map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCondition(c)}
-                    className={`rounded-xl border py-2 text-xs font-semibold capitalize transition-all ${
-                      condition === c
-                        ? 'border-emerald-500 bg-emerald-500/20 text-white'
-                        : 'border-slate-800 bg-slate-900 text-slate-400'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* Category */}
+          <div>
+            <label className="text-xs font-bold text-[var(--ink)]">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-4 py-2.5 text-xs text-[var(--ink)] focus:outline-none focus:ring-2 focus:ring-[var(--emerald)]"
+            >
+              {TRADE_CATEGORIES.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Price / Free Toggle */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300">Pricing</span>
-              <div className="flex rounded-lg border border-slate-800 bg-slate-950 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setFree(true)}
-                  className={`rounded-md px-3 py-1 text-xs font-bold transition-all ${
-                    free ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'
-                  }`}
-                >
-                  Give for Free
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFree(false)}
-                  className={`rounded-md px-3 py-1 text-xs font-bold transition-all ${
-                    !free ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'
-                  }`}
-                >
-                  Set Price
-                </button>
-              </div>
+          {/* Price / Free Toggle in Frosted Sliding Pill */}
+          <div>
+            <label className="text-xs font-bold text-[var(--ink)]">Pricing</label>
+            <div className="mt-1 flex rounded-full bg-[var(--glass-bg-subtle)] p-1 border border-[var(--glass-border-contrast)]">
+              <button
+                type="button"
+                onClick={() => setFree(true)}
+                className={`flex-1 rounded-full py-2 text-xs font-bold transition-all ${
+                  free
+                    ? 'bg-[var(--glass-bg-elevated)] text-[var(--emerald)] shadow-sm'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                }`}
+              >
+                Free / Calamity Aid
+              </button>
+              <button
+                type="button"
+                onClick={() => setFree(false)}
+                className={`flex-1 rounded-full py-2 text-xs font-bold transition-all ${
+                  !free
+                    ? 'bg-[var(--glass-bg-elevated)] text-[var(--ink)] shadow-sm'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                }`}
+              >
+                Set Fixed Price (₹)
+              </button>
             </div>
 
             {!free && (
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex items-center rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-2 text-sm text-white">
-                  <span className="text-slate-400 mr-1">₹</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100000}
-                    value={price}
-                    onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-24 bg-transparent font-bold text-white focus:outline-none"
-                  />
-                </div>
-                <span className="text-xs text-slate-400">Payment arranged directly in person</span>
+              <div className="mt-2 flex items-center rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] px-4 py-2.5">
+                <span className="text-sm font-bold text-[var(--ink)] mr-2">₹</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={50000}
+                  value={price}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  placeholder="Price in rupees"
+                  className="w-full bg-transparent text-sm font-bold text-[var(--ink)] focus:outline-none"
+                />
               </div>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-xs font-semibold text-slate-300">Notes / Details</label>
+            <label className="text-xs font-bold text-[var(--ink)]">Description & Handover Note</label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Unopened seal, expiry Nov 2027, pickup from ground floor lobby..."
-              className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/90 p-3 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+              placeholder="e.g. Unopened container, available for pickup near bus stop..."
+              className="mt-1 w-full rounded-2xl border border-[var(--glass-border-contrast)] bg-[var(--glass-bg-subtle)] p-3 text-xs text-[var(--ink)] placeholder:text-[var(--faint)] focus:outline-none focus:ring-2 focus:ring-[var(--emerald)] leading-relaxed"
             />
           </div>
 
@@ -229,14 +211,14 @@ export function PostListingModal({
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-950/50 hover:opacity-90 disabled:opacity-50 transition-all"
+            className="btn-pill btn-pill-emerald w-full py-3.5 text-sm font-bold shadow-lg"
           >
             {loading ? (
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
               <>
-                <Send size={16} />
-                <span>List Item for Neighbours</span>
+                <Send size={15} />
+                <span>List Item for Locality</span>
               </>
             )}
           </button>

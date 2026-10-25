@@ -53,25 +53,26 @@ export function TradeFeed({ token, user }: TradeFeedProps) {
   });
 
   return (
-    <div className="space-y-4 px-4 py-4 animate-fade-in">
-      {/* Top Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/60 via-slate-900 to-teal-950/40 p-5 shadow-xl">
-        <div className="relative z-10 flex items-start justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
+    <div className="space-y-4 animate-fade-in">
+      {/* Top Banner in Frosted Glass */}
+      <div className="glass-card p-5 sm:p-6 flex flex-col justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            <span className="frosted-badge frosted-badge-emerald">
               <Sparkles size={11} />
-              Hyperlocal Essentials
+              <span>Hyperlocal Community Supplies</span>
             </span>
-            <h2 className="mt-2 text-lg font-black tracking-tight text-white sm:text-xl">
-              Local Supplies & Trade
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--ink)]">
+              Local Supplies & Essentials
             </h2>
-            <p className="mt-1 text-xs text-slate-300 max-w-xs leading-relaxed">
-              Find emergency water, power banks, first aid and tools within {user?.radiusKm || 4} km.
+            <p className="text-xs sm:text-[13px] text-[var(--ink-secondary)] max-w-sm leading-relaxed">
+              Find emergency power, drinking water, first aid and rations within {user?.radiusKm || 3.5} km.
             </p>
           </div>
+
           <button
             onClick={() => setShowPostModal(true)}
-            className="flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-950/60 hover:opacity-90 active:scale-95 transition-all shrink-0"
+            className="btn-pill btn-pill-emerald shrink-0 shadow-lg"
           >
             <Plus size={16} />
             <span>Offer Item</span>
@@ -82,8 +83,8 @@ export function TradeFeed({ token, user }: TradeFeedProps) {
       {/* My Listings & Requested items */}
       {(mine.length > 0 || requested.length > 0) && (
         <div className="space-y-2.5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-            My Offers & Requests
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] px-1">
+            My Offers & Involvements
           </h3>
           <div className="grid grid-cols-2 gap-2.5">
             {mine.map((l: any) => (
@@ -96,25 +97,25 @@ export function TradeFeed({ token, user }: TradeFeedProps) {
         </div>
       )}
 
-      {/* Filter Categories */}
-      <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 no-scrollbar">
+      {/* Frosted Filter Pills */}
+      <div className="flex items-center justify-between gap-2 overflow-x-auto py-1 no-scrollbar">
         <div className="flex gap-1.5">
           <button
             onClick={() => setCategoryFilter('all')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
+            className={`btn-pill text-xs py-1.5 px-3.5 min-h-[34px] ${
               categoryFilter === 'all'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                ? 'btn-pill-primary font-bold'
+                : 'btn-pill-secondary font-medium'
             }`}
           >
             All Items
           </button>
           <button
             onClick={() => setFreeOnly(!freeOnly)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${
+            className={`btn-pill text-xs py-1.5 px-3 min-h-[34px] ${
               freeOnly
-                ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
-                : 'border-slate-800 bg-slate-800/40 text-slate-400'
+                ? 'btn-pill-emerald font-bold'
+                : 'btn-pill-secondary font-medium'
             }`}
           >
             Free Only
@@ -123,10 +124,10 @@ export function TradeFeed({ token, user }: TradeFeedProps) {
             <button
               key={c.id}
               onClick={() => setCategoryFilter(c.id)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`btn-pill text-xs py-1.5 px-3 min-h-[34px] whitespace-nowrap ${
                 categoryFilter === c.id
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                  ? 'btn-pill-primary font-bold'
+                  : 'btn-pill-secondary font-medium'
               }`}
             >
               {c.label}
@@ -136,30 +137,43 @@ export function TradeFeed({ token, user }: TradeFeedProps) {
 
         <button
           onClick={fetchListings}
-          className="rounded-xl p-2 text-slate-400 hover:text-white transition-colors"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] border border-[var(--glass-border-contrast)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--glass-bg-elevated)] transition-all active:scale-95 shadow-sm"
           title="Refresh Items"
         >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
 
       {/* Grid of items */}
-      <div className="pt-1">
+      <div className="pt-0.5">
         {loading && nearby.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent mb-2" />
-            <p className="text-xs">Finding available essentials nearby...</p>
-          </div>
-        ) : filteredNearby.length === 0 ? (
-          <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 p-8 text-center">
-            <Package size={36} className="mx-auto text-slate-600 mb-2" />
-            <h4 className="text-sm font-bold text-white">No Items Listed Yet</h4>
-            <p className="mt-1 text-xs text-slate-400 max-w-xs mx-auto">
-              Be the first to offer spare drinking water, batteries, torches or medicines to people in your area.
+          <div className="glass-card p-12 flex flex-col items-center justify-center text-center">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--emerald)] border-t-transparent mb-3" />
+            <p className="text-xs font-semibold text-[var(--muted)]">
+              Scanning local supplies nearby...
             </p>
           </div>
+        ) : filteredNearby.length === 0 ? (
+          <div className="glass-card p-8 sm:p-10 text-center flex flex-col items-center justify-center border-dashed">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--glass-bg-subtle)] text-[var(--muted)] mb-3">
+              <Package size={26} />
+            </div>
+            <h4 className="text-base font-bold text-[var(--ink)]">
+              No Items Listed Yet
+            </h4>
+            <p className="mt-1 text-xs text-[var(--muted)] max-w-xs mx-auto leading-relaxed">
+              Be the first neighbour to offer spare drinking water, power banks, batteries or medical kits.
+            </p>
+            <button
+              onClick={() => setShowPostModal(true)}
+              className="mt-4 btn-pill btn-pill-emerald text-xs"
+            >
+              <Plus size={14} />
+              <span>Offer an Essential Item</span>
+            </button>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-2 md:grid-cols-3">
             {filteredNearby.map((item: any) => (
               <ListingCard
                 key={item.id}

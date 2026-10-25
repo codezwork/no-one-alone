@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Rounded Apple squircle badge -->
+  <rect width="64" height="64" rx="18" fill="#000000"/>
+  
+  <!-- Subtle specular inner ring -->
+  <rect x="1" y="1" width="62" height="62" rx="17" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1"/>
+  
+  <!-- Two Hands Joining Together in Mutual Aid & Solidarity -->
+  <g stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Left Hand / Arm reaching upward to join -->
+    <path d="M12 44 L21 34 C23 31.8 26.2 31 29 32.2 L31 33" />
+    <path d="M16 48 L25 38.5" />
+    
+    <!-- Right Hand / Arm reaching to meet and grasp -->
+    <path d="M52 44 L43 34 C41 31.8 37.8 31 35 32.2 L33 33" />
+    <path d="M48 48 L39 38.5" />
+    
+    <!-- Clasped fingers & joined palms (interlocking embrace) -->
+    <path d="M26 27 C28 24 31 23 34 24.5 L36.5 26 C38 27 38.5 29 37.5 30.5 L34 35.5" />
+    <path d="M38 27 C36 24 33 23 30 24.5 L27.5 26 C26 27 25.5 29 26.5 30.5 L30 35.5" />
+    
+    <!-- Center interlocking clasp arc -->
+    <path d="M28 32 C30.5 30.2 33.5 30.2 36 32" stroke-width="3.2" />
+    <path d="M29 36 C31 37.5 33 37.5 35 36" stroke-width="2.6" />
+    
+    <!-- Warmth/solidarity spark accent above hands -->
+    <circle cx="32" cy="18" r="2.2" fill="#ffffff" stroke="none" />
+  </g>
+</svg>

@@ -27,8 +27,9 @@ const SECURITY_HEADERS = {
   'Content-Security-Policy': [
     "default-src 'self'",
     "img-src 'self' data: blob: https://tile.openstreetmap.org",
-    "style-src 'self' 'unsafe-inline'",
-    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "script-src 'self' 'unsafe-inline'",
     "connect-src 'self'",
     "worker-src 'self'",
     "frame-ancestors 'none'",
@@ -54,6 +55,10 @@ function createLimiter() {
 }
 
 function readBody(req, limit = 1_000_000) {
+  if (req.body && typeof req.body === 'object') return Promise.resolve(req.body);
+  if (typeof req.body === 'string') {
+    try { return Promise.resolve(JSON.parse(req.body)); } catch { /* fallback to stream */ }
+  }
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
@@ -184,9 +189,10 @@ function createApp({ dbFile = process.env.DB_FILE || path.join(process.env.DATA_
   }
 
   async function handler(req, res) {
-    const url = new URL(req.url, 'http://localhost');
+    const rawPath = req.headers['x-matched-path'] || req.originalUrl || req.url;
+    const url = new URL(rawPath, 'http://localhost');
     try {
-      if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
+      if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
       if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, SECURITY_HEADERS); return res.end(); }
       if (url.pathname.startsWith('/vendor/leaflet/')) {
         const rel = path.normalize(url.pathname.slice('/vendor/leaflet/'.length)).replace(/^(\.\.[/\\])+/, '');

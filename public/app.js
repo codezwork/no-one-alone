@@ -120,7 +120,14 @@
       throw new Error('You seem to be offline. Check your connection and try again.');
     }
     let data = {};
-    try { data = await res.json(); } catch { /* empty body */ }
+    const ct = res.headers.get('content-type') || '';
+    try {
+      data = await res.json();
+    } catch {
+      if (res.ok && !ct.includes('application/json')) {
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
+    }
     if (res.status === 401 && S.token && !path.startsWith('/api/sign')) {
       signOut();
       throw new Error('Please sign in again.');
@@ -152,8 +159,14 @@
     const keepScroll = opts.keepScroll && key === lastRouteKey ? window.scrollY : null;
     lastRouteKey = key;
 
-    if (!S.meta) {
-      try { S.meta = await api('GET', '/api/meta'); } catch (e) { return paintRaw(errorPage(e)); }
+    if (!S.meta || !S.meta.rules) {
+      try {
+        const m = await api('GET', '/api/meta');
+        if (!m || !m.rules) throw new Error('Could not load community rules. Please refresh.');
+        S.meta = m;
+      } catch (e) {
+        return paintRaw(errorPage(e));
+      }
     }
     if (!S.token) {
       if (r.name === 'signin') return paintRaw(viewSignin());
@@ -1288,7 +1301,8 @@
     ob2: (form) => {
       const age = Number(form.age.value);
       if (!Number.isInteger(age) || age < 1 || age > 110) { toast('Please enter your age in years.', true); return; }
-      if (age < S.meta.rules.minSignupAge) { toast(`You need to be ${S.meta.rules.minSignupAge} or older to use Neighbours. Ask an adult to post for you, or call 1098.`, true); return; }
+      const minAge = S.meta?.rules?.minSignupAge || 13;
+      if (age < minAge) { toast(`You need to be ${minAge} or older to use Neighbours. Ask an adult to post for you, or call 1098.`, true); return; }
       if (!S.ob.gender) { toast('Please choose a gender.', true); return; }
       if (!S.ob.marital) { toast('Please choose married or unmarried.', true); return; }
       S.ob.age = age; S.ob.step = 3; paintRaw(viewOnboard());
